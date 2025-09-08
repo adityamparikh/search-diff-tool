@@ -10,7 +10,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 @SpringBootTest
 @TestPropertySource(properties = {
     "schema.mapping.fields.custom_field.primary=custom_primary_field",
-    "schema.mapping.fields.custom_field.secondary=custom_secondary_field"
+    "schema.mapping.fields.custom_field.secondary=custom_secondary_field",
+    "schema.mapping.fields.custom_field.type=string"
 })
 class FieldMappingConfigTest {
 
@@ -24,8 +25,9 @@ class FieldMappingConfigTest {
                 .containsKey("custom_field");
         
         FieldMappingConfig.FieldMapping customMapping = fieldMappingConfig.getFields().get("custom_field");
-        assertThat(customMapping.getPrimary()).isEqualTo("custom_primary_field");
-        assertThat(customMapping.getSecondary()).isEqualTo("custom_secondary_field");
+        assertThat(customMapping.primary()).isEqualTo("custom_primary_field");
+        assertThat(customMapping.secondary()).isEqualTo("custom_secondary_field");
+        assertThat(customMapping.type()).isEqualTo("string");
         
         // Verify backward compatibility maps are built correctly
         assertThat(fieldMappingConfig.getPrimaryToCommon())
@@ -45,8 +47,16 @@ class FieldMappingConfigTest {
 
         // Verify the new structure
         FieldMappingConfig.FieldMapping subjectMapping = fieldMappingConfig.getFields().get("subject");
-        assertThat(subjectMapping.getPrimary()).isEqualTo("email_subject");
-        assertThat(subjectMapping.getSecondary()).isEqualTo("subject_field");
+        assertThat(subjectMapping.primary()).isEqualTo("email_subject");
+        assertThat(subjectMapping.secondary()).isEqualTo("subject_field");
+        assertThat(subjectMapping.type()).isEqualTo("string");
+
+        // Verify different data types
+        FieldMappingConfig.FieldMapping dateMapping = fieldMappingConfig.getFields().get("date");
+        assertThat(dateMapping.type()).isEqualTo("date");
+        
+        FieldMappingConfig.FieldMapping attachmentsMapping = fieldMappingConfig.getFields().get("attachments");
+        assertThat(attachmentsMapping.type()).isEqualTo("list");
 
         // Verify backward compatibility maps are built correctly
         assertThat(fieldMappingConfig.getPrimaryToCommon())
@@ -79,14 +89,14 @@ class FieldMappingConfigTest {
             String commonField = entry.getKey();
             FieldMappingConfig.FieldMapping mapping = entry.getValue();
             
-            if (mapping.getPrimary() != null) {
+            if (mapping.primary() != null) {
                 assertThat(fieldMappingConfig.getPrimaryToCommon())
-                        .containsEntry(mapping.getPrimary(), commonField);
+                        .containsEntry(mapping.primary(), commonField);
             }
             
-            if (mapping.getSecondary() != null) {
+            if (mapping.secondary() != null) {
                 assertThat(fieldMappingConfig.getSecondaryToCommon())
-                        .containsEntry(mapping.getSecondary(), commonField);
+                        .containsEntry(mapping.secondary(), commonField);
             }
         }
     }

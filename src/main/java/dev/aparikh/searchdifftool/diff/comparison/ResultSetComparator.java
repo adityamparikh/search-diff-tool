@@ -18,11 +18,11 @@ public class ResultSetComparator {
                                        List<EmailDocument> secondaryDocs) {
         
         Set<String> primaryIds = primaryDocs.stream()
-            .map(EmailDocument::getId)
+            .map(doc -> doc.id())
             .collect(Collectors.toSet());
             
         Set<String> secondaryIds = secondaryDocs.stream()
-            .map(EmailDocument::getId)
+            .map(doc -> doc.id())
             .collect(Collectors.toSet());
         
         List<String> onlyInPrimary = primaryIds.stream()

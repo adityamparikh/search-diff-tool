@@ -3,6 +3,7 @@ package dev.aparikh.searchdifftool.email;
 import dev.aparikh.searchdifftool.email.model.EmailDocument;
 import dev.aparikh.searchdifftool.email.model.SearchCriteria;
 import dev.aparikh.searchdifftool.solr.client.SolrClientService;
+import dev.aparikh.searchdifftool.solr.schema.FieldMappingConfig;
 import dev.aparikh.searchdifftool.solr.schema.SchemaMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -28,6 +29,7 @@ public class EmailSearchService {
     
     private final SolrClientService solrClientService;
     private final SchemaMapper schemaMapper;
+    private final FieldMappingConfig fieldMappingConfig;
     
     public SearchResult searchPrimary(SearchCriteria criteria) {
         try {
@@ -79,17 +81,58 @@ public class EmailSearchService {
     private EmailDocument convertToEmailDocument(SolrDocument doc, boolean isPrimary) {
         Map<String, Object> commonDoc = schemaMapper.mapDocumentToCommon(doc, isPrimary);
         
-        return EmailDocument.builder()
-            .id(getStringValue(commonDoc, "id"))
-            .subject(getStringValue(commonDoc, "subject"))
-            .from(getStringValue(commonDoc, "from"))
-            .to(getStringValue(commonDoc, "to"))
-            .body(getStringValue(commonDoc, "body"))
-            .date(getDateValue(commonDoc, "date"))
-            .attachments(getListValue(commonDoc, "attachments"))
-            .source(isPrimary ? "primary" : "secondary")
-            .metadata(commonDoc)
-            .build();
+        // Build field values array dynamically based on configuration
+        Object[] fieldValues = new Object[9]; // EmailDocument has 9 fields
+        
+        // Get field values dynamically using configuration
+        for (Map.Entry<String, FieldMappingConfig.FieldMapping> entry : fieldMappingConfig.getFields().entrySet()) {
+            String commonFieldName = entry.getKey();
+            String dataType = entry.getValue().type();
+            
+            Object value = getValueByType(commonDoc, commonFieldName, dataType);
+            setFieldValueByName(fieldValues, commonFieldName, value);
+        }
+        
+        // Set metadata and source
+        fieldValues[7] = commonDoc; // metadata
+        fieldValues[8] = isPrimary ? "primary" : "secondary"; // source
+        
+        return new EmailDocument(
+            (String) fieldValues[0], // id
+            (String) fieldValues[1], // subject  
+            (String) fieldValues[2], // from
+            (String) fieldValues[3], // to
+            (String) fieldValues[4], // body
+            (LocalDateTime) fieldValues[5], // date
+            (List<String>) fieldValues[6], // attachments
+            (Map<String, Object>) fieldValues[7], // metadata
+            (String) fieldValues[8] // source
+        );
+    }
+    
+    private Object getValueByType(Map<String, Object> doc, String fieldName, String dataType) {
+        return switch (dataType.toLowerCase()) {
+            case "string" -> getStringValue(doc, fieldName);
+            case "date" -> getDateValue(doc, fieldName);
+            case "list" -> getListValue(doc, fieldName);
+            default -> {
+                log.warn("Unknown data type '{}' for field '{}', treating as string", dataType, fieldName);
+                yield getStringValue(doc, fieldName);
+            }
+        };
+    }
+    
+    private void setFieldValueByName(Object[] fieldValues, String fieldName, Object value) {
+        switch (fieldName) {
+            case "id" -> fieldValues[0] = value;
+            case "subject" -> fieldValues[1] = value;
+            case "from" -> fieldValues[2] = value;
+            case "to" -> fieldValues[3] = value;
+            case "body" -> fieldValues[4] = value;
+            case "date" -> fieldValues[5] = value;
+            case "attachments" -> fieldValues[6] = value;
+            default -> log.warn("Unknown field name: {}", fieldName);
+        }
     }
     
     private String getStringValue(Map<String, Object> doc, String key) {

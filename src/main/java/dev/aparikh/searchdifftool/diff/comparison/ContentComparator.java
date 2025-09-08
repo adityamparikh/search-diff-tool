@@ -2,10 +2,13 @@ package dev.aparikh.searchdifftool.diff.comparison;
 
 import dev.aparikh.searchdifftool.diff.model.DiffResult;
 import dev.aparikh.searchdifftool.email.model.EmailDocument;
+import dev.aparikh.searchdifftool.solr.schema.FieldMappingConfig;
 import lombok.Data;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
+import java.lang.reflect.RecordComponent;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -15,26 +18,30 @@ import java.util.stream.Collectors;
 
 @Slf4j
 @Component
+@RequiredArgsConstructor
 public class ContentComparator {
+    
+    private final FieldMappingConfig fieldMappingConfig;
     
     public ComparisonResult compareDocuments(List<EmailDocument> primaryDocs, 
                                            List<EmailDocument> secondaryDocs) {
         
         // Create maps for quick lookup
         Map<String, EmailDocument> primaryMap = primaryDocs.stream()
-            .collect(Collectors.toMap(EmailDocument::getId, doc -> doc));
+            .collect(Collectors.toMap(doc -> doc.id(), doc -> doc));
             
         Map<String, EmailDocument> secondaryMap = secondaryDocs.stream()
-            .collect(Collectors.toMap(EmailDocument::getId, doc -> doc));
+            .collect(Collectors.toMap(doc -> doc.id(), doc -> doc));
         
         List<DiffResult.ContentDifference> differences = new ArrayList<>();
         Map<String, Integer> differencesByField = new HashMap<>();
         long documentsWithDifferences = 0;
         
         // Compare documents that exist in both sets
-        for (String docId : primaryMap.keySet()) {
+        for (Map.Entry<String, EmailDocument> entry : primaryMap.entrySet()) {
+            String docId = entry.getKey();
             if (secondaryMap.containsKey(docId)) {
-                EmailDocument primaryDoc = primaryMap.get(docId);
+                EmailDocument primaryDoc = entry.getValue();
                 EmailDocument secondaryDoc = secondaryMap.get(docId);
                 
                 List<DiffResult.ContentDifference> docDifferences = compareDocument(primaryDoc, secondaryDoc);
@@ -65,28 +72,40 @@ public class ContentComparator {
     private List<DiffResult.ContentDifference> compareDocument(EmailDocument primary, EmailDocument secondary) {
         List<DiffResult.ContentDifference> differences = new ArrayList<>();
         
-        // Compare each field
-        compareField(differences, primary.getId(), "subject", primary.getSubject(), secondary.getSubject());
-        compareField(differences, primary.getId(), "from", primary.getFrom(), secondary.getFrom());
-        compareField(differences, primary.getId(), "to", primary.getTo(), secondary.getTo());
-        compareField(differences, primary.getId(), "body", primary.getBody(), secondary.getBody());
-        compareField(differences, primary.getId(), "date", primary.getDate(), secondary.getDate());
-        compareField(differences, primary.getId(), "attachments", primary.getAttachments(), secondary.getAttachments());
+        // Compare fields dynamically based on configuration
+        fieldMappingConfig.getFields().keySet().forEach(commonFieldName -> {
+            Object primaryValue = getFieldValue(primary, commonFieldName);
+            Object secondaryValue = getFieldValue(secondary, commonFieldName);
+            compareField(differences, primary.id(), commonFieldName, primaryValue, secondaryValue);
+        });
         
         // Compare metadata if present
-        if (primary.getMetadata() != null && secondary.getMetadata() != null) {
-            compareMetadata(differences, primary.getId(), primary.getMetadata(), secondary.getMetadata());
-        } else if (primary.getMetadata() != null || secondary.getMetadata() != null) {
+        if (primary.metadata() != null && secondary.metadata() != null) {
+            compareMetadata(differences, primary.id(), primary.metadata(), secondary.metadata());
+        } else if (primary.metadata() != null || secondary.metadata() != null) {
             differences.add(DiffResult.ContentDifference.builder()
-                .documentId(primary.getId())
+                .documentId(primary.id())
                 .field("metadata")
-                .primaryValue(primary.getMetadata())
-                .secondaryValue(secondary.getMetadata())
+                .primaryValue(primary.metadata())
+                .secondaryValue(secondary.metadata())
                 .differenceType("MISSING")
                 .build());
         }
         
         return differences;
+    }
+    
+    private Object getFieldValue(EmailDocument document, String commonFieldName) {
+        try {
+            for (RecordComponent component : EmailDocument.class.getRecordComponents()) {
+                if (component.getName().equals(commonFieldName)) {
+                    return component.getAccessor().invoke(document);
+                }
+            }
+        } catch (Exception e) {
+            log.warn("Failed to access field '{}' on EmailDocument: {}", commonFieldName, e.getMessage());
+        }
+        return null;
     }
     
     private void compareField(List<DiffResult.ContentDifference> differences, String docId, 
@@ -120,9 +139,10 @@ public class ContentComparator {
         }
         
         // Check for keys only in secondary
-        for (String key : secondaryMetadata.keySet()) {
+        for (Map.Entry<String, Object> entry : secondaryMetadata.entrySet()) {
+            String key = entry.getKey();
             if (!primaryMetadata.containsKey(key)) {
-                compareField(differences, docId, "metadata." + key, null, secondaryMetadata.get(key));
+                compareField(differences, docId, "metadata." + key, null, entry.getValue());
             }
         }
     }

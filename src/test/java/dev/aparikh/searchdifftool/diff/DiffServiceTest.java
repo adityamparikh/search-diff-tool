@@ -448,14 +448,16 @@ class DiffServiceTest {
     }
 
     private EmailDocument createEmailDocument(String id, String subject, String from, String body, String source) {
-        return EmailDocument.builder()
-                .id(id)
-                .subject(subject)
-                .from(from)
-                .to("recipient@example.com")
-                .body(body)
-                .date(LocalDateTime.now())
-                .source(source.toLowerCase())
-                .build();
+        return new EmailDocument(
+                id,
+                subject,
+                from,
+                "recipient@example.com",
+                body,
+                LocalDateTime.now(),
+                null,
+                null,
+                source.toLowerCase()
+        );
     }
 }

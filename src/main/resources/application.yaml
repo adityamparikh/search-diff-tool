@@ -17,31 +17,38 @@ solr:
     max-connections-per-route: 20
 
 # Schema Field Mapping Configuration
-# Common field names mapped to system-specific field names
+# Common field names mapped to system-specific field names with data types
 schema:
   mapping:
     fields:
       subject:
         primary: email_subject
         secondary: subject_field
+        type: string
       from:
         primary: email_from
         secondary: from_field
+        type: string
       to:
         primary: email_to
         secondary: to_field
+        type: string
       body:
         primary: email_body
         secondary: body_field
+        type: string
       date:
         primary: email_date
         secondary: date_field
+        type: date
       id:
         primary: email_id
         secondary: message_id
+        type: string
       attachments:
         primary: email_attachments
         secondary: attachment_list
+        type: list
 
 # Logging Configuration
 logging:
