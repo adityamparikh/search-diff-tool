@@ -71,24 +71,31 @@ solr:
     max-connections-per-route: 20
 
 # Schema Field Mapping Configuration
+# Common field names mapped to system-specific field names
 schema:
   mapping:
-    primary-to-common:
-      email_subject: subject
-      email_from: from
-      email_to: to
-      email_body: body
-      email_date: date
-      email_id: id
-      email_attachments: attachments
-    secondary-to-common:
-      subject_field: subject
-      from_field: from
-      to_field: to
-      body_field: body
-      date_field: date
-      message_id: id
-      attachment_list: attachments
+    fields:
+      subject:
+        primary: email_subject
+        secondary: subject_field
+      from:
+        primary: email_from
+        secondary: from_field
+      to:
+        primary: email_to
+        secondary: to_field
+      body:
+        primary: email_body
+        secondary: body_field
+      date:
+        primary: email_date
+        secondary: date_field
+      id:
+        primary: email_id
+        secondary: message_id
+      attachments:
+        primary: email_attachments
+        secondary: attachment_list
 
 # Logging Configuration
 logging:
@@ -447,17 +454,23 @@ Add new field mappings directly in `application.yaml`:
 ```yaml
 schema:
   mapping:
-    primary-to-common:
-      # Add your custom primary system field mappings
-      custom_email_field: normalized_field
-      priority_level: priority
-      department_code: department
-    secondary-to-common:
-      # Add your custom secondary system field mappings
-      different_email_field: normalized_field
-      importance_flag: priority
-      dept_id: department
+    fields:
+      # Add your custom field mappings with common field as key
+      priority:
+        primary: priority_level
+        secondary: importance_flag
+      department:
+        primary: department_code
+        secondary: dept_id
+      custom_field:
+        primary: custom_email_field
+        secondary: different_email_field
 ```
+
+This structure is much more intuitive as:
+- **Common field names** are the keys (what you want to normalize to)
+- **System-specific field names** are the values (what exists in each Solr instance)
+- Easy to see the mapping relationship at a glance
 
 ### Custom Search Criteria
 Extend `SearchCriteria.java` to add new search parameters:

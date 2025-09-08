@@ -13,51 +13,65 @@ import java.util.Map;
 @ConfigurationProperties(prefix = "schema.mapping")
 public class FieldMappingConfig {
     
+    // New structure: common field name -> {primary: field, secondary: field}
+    private Map<String, FieldMapping> fields = new HashMap<>();
+    
+    // Maintain backward compatibility with existing SchemaMapper
     private Map<String, String> primaryToCommon = new HashMap<>();
     private Map<String, String> secondaryToCommon = new HashMap<>();
     
     @PostConstruct
-    public void validateConfiguration() {
-        if (primaryToCommon.isEmpty()) {
+    public void processConfiguration() {
+        if (fields.isEmpty()) {
             initializeDefaultMappings();
-            log.warn("No primary field mappings configured, using default mappings");
-        }
-        if (secondaryToCommon.isEmpty()) {
-            if (primaryToCommon.isEmpty()) {
-                initializeDefaultMappings(); // This will set both if both are empty
-            } else {
-                initializeDefaultSecondaryMappings();
-            }
-            log.warn("No secondary field mappings configured, using default mappings");
+            log.warn("No field mappings configured, using default mappings");
         }
         
-        log.info("Loaded {} primary field mappings and {} secondary field mappings",
-                primaryToCommon.size(), secondaryToCommon.size());
+        // Build the reverse lookup maps for SchemaMapper compatibility
+        buildReverseMaps();
+        
+        log.info("Loaded {} field mappings with {} primary and {} secondary field mappings",
+                fields.size(), primaryToCommon.size(), secondaryToCommon.size());
+    }
+    
+    private void buildReverseMaps() {
+        primaryToCommon.clear();
+        secondaryToCommon.clear();
+        
+        for (Map.Entry<String, FieldMapping> entry : fields.entrySet()) {
+            String commonField = entry.getKey();
+            FieldMapping mapping = entry.getValue();
+            
+            if (mapping.getPrimary() != null) {
+                primaryToCommon.put(mapping.getPrimary(), commonField);
+            }
+            if (mapping.getSecondary() != null) {
+                secondaryToCommon.put(mapping.getSecondary(), commonField);
+            }
+        }
     }
     
     private void initializeDefaultMappings() {
-        initializeDefaultPrimaryMappings();
-        initializeDefaultSecondaryMappings();
+        fields.put("subject", new FieldMapping("email_subject", "subject_field"));
+        fields.put("from", new FieldMapping("email_from", "from_field"));
+        fields.put("to", new FieldMapping("email_to", "to_field"));
+        fields.put("body", new FieldMapping("email_body", "body_field"));
+        fields.put("date", new FieldMapping("email_date", "date_field"));
+        fields.put("id", new FieldMapping("email_id", "message_id"));
+        fields.put("attachments", new FieldMapping("email_attachments", "attachment_list"));
     }
     
-    private void initializeDefaultPrimaryMappings() {
-        primaryToCommon.put("email_subject", "subject");
-        primaryToCommon.put("email_from", "from");
-        primaryToCommon.put("email_to", "to");
-        primaryToCommon.put("email_body", "body");
-        primaryToCommon.put("email_date", "date");
-        primaryToCommon.put("email_id", "id");
-        primaryToCommon.put("email_attachments", "attachments");
-    }
-    
-    private void initializeDefaultSecondaryMappings() {
-        secondaryToCommon.put("subject_field", "subject");
-        secondaryToCommon.put("from_field", "from");
-        secondaryToCommon.put("to_field", "to");
-        secondaryToCommon.put("body_field", "body");
-        secondaryToCommon.put("date_field", "date");
-        secondaryToCommon.put("message_id", "id");
-        secondaryToCommon.put("attachment_list", "attachments");
+    @Data
+    public static class FieldMapping {
+        private String primary;
+        private String secondary;
+        
+        public FieldMapping() {}
+        
+        public FieldMapping(String primary, String secondary) {
+            this.primary = primary;
+            this.secondary = secondary;
+        }
     }
     
     private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(FieldMappingConfig.class);

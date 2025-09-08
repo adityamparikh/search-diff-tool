@@ -9,8 +9,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest
 @TestPropertySource(properties = {
-    "schema.mapping.primary-to-common.custom_field=normalized_custom",
-    "schema.mapping.secondary-to-common.different_field=normalized_custom"
+    "schema.mapping.fields.custom_field.primary=custom_primary_field",
+    "schema.mapping.fields.custom_field.secondary=custom_secondary_field"
 })
 class FieldMappingConfigTest {
 
@@ -19,17 +19,36 @@ class FieldMappingConfigTest {
 
     @Test
     void shouldLoadFieldMappingsFromConfiguration() {
-        // Verify that custom configuration is loaded
+        // Verify that custom configuration is loaded in the new structure
+        assertThat(fieldMappingConfig.getFields())
+                .containsKey("custom_field");
+        
+        FieldMappingConfig.FieldMapping customMapping = fieldMappingConfig.getFields().get("custom_field");
+        assertThat(customMapping.getPrimary()).isEqualTo("custom_primary_field");
+        assertThat(customMapping.getSecondary()).isEqualTo("custom_secondary_field");
+        
+        // Verify backward compatibility maps are built correctly
         assertThat(fieldMappingConfig.getPrimaryToCommon())
-                .containsEntry("custom_field", "normalized_custom");
+                .containsEntry("custom_primary_field", "custom_field");
         
         assertThat(fieldMappingConfig.getSecondaryToCommon())
-                .containsEntry("different_field", "normalized_custom");
+                .containsEntry("custom_secondary_field", "custom_field");
     }
 
     @Test
     void shouldLoadDefaultMappingsFromYaml() {
-        // Verify that default mappings from YAML are loaded
+        // Verify that default mappings from YAML are loaded in new structure
+        assertThat(fieldMappingConfig.getFields())
+                .containsKey("subject")
+                .containsKey("from")
+                .containsKey("to");
+
+        // Verify the new structure
+        FieldMappingConfig.FieldMapping subjectMapping = fieldMappingConfig.getFields().get("subject");
+        assertThat(subjectMapping.getPrimary()).isEqualTo("email_subject");
+        assertThat(subjectMapping.getSecondary()).isEqualTo("subject_field");
+
+        // Verify backward compatibility maps are built correctly
         assertThat(fieldMappingConfig.getPrimaryToCommon())
                 .containsEntry("email_subject", "subject")
                 .containsEntry("email_from", "from")
@@ -43,11 +62,32 @@ class FieldMappingConfigTest {
 
     @Test
     void shouldHaveNonEmptyMappings() {
+        assertThat(fieldMappingConfig.getFields()).isNotEmpty();
         assertThat(fieldMappingConfig.getPrimaryToCommon()).isNotEmpty();
         assertThat(fieldMappingConfig.getSecondaryToCommon()).isNotEmpty();
         
         // Should have at least the 7 default mappings plus the test custom mapping
+        assertThat(fieldMappingConfig.getFields()).hasSizeGreaterThanOrEqualTo(7);
         assertThat(fieldMappingConfig.getPrimaryToCommon()).hasSizeGreaterThanOrEqualTo(7);
         assertThat(fieldMappingConfig.getSecondaryToCommon()).hasSizeGreaterThanOrEqualTo(7);
+    }
+
+    @Test
+    void shouldMaintainConsistencyBetweenNewAndOldStructures() {
+        // Verify that the new structure and backward compatibility maps are consistent
+        for (var entry : fieldMappingConfig.getFields().entrySet()) {
+            String commonField = entry.getKey();
+            FieldMappingConfig.FieldMapping mapping = entry.getValue();
+            
+            if (mapping.getPrimary() != null) {
+                assertThat(fieldMappingConfig.getPrimaryToCommon())
+                        .containsEntry(mapping.getPrimary(), commonField);
+            }
+            
+            if (mapping.getSecondary() != null) {
+                assertThat(fieldMappingConfig.getSecondaryToCommon())
+                        .containsEntry(mapping.getSecondary(), commonField);
+            }
+        }
     }
 }
