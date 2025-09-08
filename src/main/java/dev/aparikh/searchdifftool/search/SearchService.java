@@ -1,12 +1,10 @@
 package dev.aparikh.searchdifftool.search;
 
-import dev.aparikh.searchdifftool.search.solr.schema.SchemaMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.solr.client.solrj.SolrClient;
 import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.solr.client.solrj.SolrServerException;
 import org.apache.solr.client.solrj.response.QueryResponse;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.apache.solr.common.SolrDocument;
 import org.apache.solr.common.SolrDocumentList;
 import org.springframework.stereotype.Service;
@@ -21,21 +19,19 @@ public class SearchService {
     
     private final SolrClient primaryClient;
     private final SolrClient secondaryClient;
-    private final SchemaMapper schemaMapper;
+    private final SolrQueryBuilder solrQueryBuilder;
     
     public SearchService(SolrClient primaryClient,
                          SolrClient secondaryClient,
-                         SchemaMapper schemaMapper) {
+                         SolrQueryBuilder solrQueryBuilder) {
         this.primaryClient = primaryClient;
         this.secondaryClient = secondaryClient;
-        this.schemaMapper = schemaMapper;
+        this.solrQueryBuilder = solrQueryBuilder;
     }
     
     public SearchResult searchPrimary(SearchCriteria criteria) {
         try {
-            SolrQuery query = schemaMapper.mapQueryForPrimary(criteria.toQueryMap());
-            query.setRows(criteria.getMaxResults());
-            query.setStart(criteria.getStart());
+            SolrQuery query = solrQueryBuilder.buildQueryForPrimary(criteria);
             
             QueryResponse response = primaryClient.query(query);
             return convertToSearchResult(response, true);
@@ -48,9 +44,7 @@ public class SearchService {
     
     public SearchResult searchSecondary(SearchCriteria criteria) {
         try {
-            SolrQuery query = schemaMapper.mapQueryForSecondary(criteria.toQueryMap());
-            query.setRows(criteria.getMaxResults());
-            query.setStart(criteria.getStart());
+            SolrQuery query = solrQueryBuilder.buildQueryForSecondary(criteria);
             
             QueryResponse response = secondaryClient.query(query);
             return convertToSearchResult(response, false);

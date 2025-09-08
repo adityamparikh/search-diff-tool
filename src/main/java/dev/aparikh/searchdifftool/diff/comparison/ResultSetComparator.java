@@ -18,11 +18,11 @@ public class ResultSetComparator {
                                        List<NormalizedDocument> secondaryDocs) {
         
         Set<String> primaryIds = primaryDocs.stream()
-            .map(NormalizedDocument::id)
+            .map(NormalizedDocument::getId)
             .collect(Collectors.toSet());
             
         Set<String> secondaryIds = secondaryDocs.stream()
-            .map(NormalizedDocument::id)
+            .map(NormalizedDocument::getId)
             .collect(Collectors.toSet());
         
         List<String> onlyInPrimary = primaryIds.stream()

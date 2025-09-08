@@ -8,7 +8,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
-import java.lang.reflect.RecordComponent;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -28,10 +28,10 @@ public class ContentComparator {
         
         // Create maps for quick lookup
         Map<String, NormalizedDocument> primaryMap = primaryDocs.stream()
-            .collect(Collectors.toMap(NormalizedDocument::id, doc -> doc));
+            .collect(Collectors.toMap(NormalizedDocument::getId, doc -> doc));
             
         Map<String, NormalizedDocument> secondaryMap = secondaryDocs.stream()
-            .collect(Collectors.toMap(NormalizedDocument::id, doc -> doc));
+            .collect(Collectors.toMap(NormalizedDocument::getId, doc -> doc));
         
         List<DiffResult.ContentDifference> differences = new ArrayList<>();
         Map<String, Integer> differencesByField = new HashMap<>();
@@ -76,18 +76,18 @@ public class ContentComparator {
         fieldMappingConfigurationProperties.getFields().keySet().forEach(commonFieldName -> {
             Object primaryValue = getFieldValue(primary, commonFieldName);
             Object secondaryValue = getFieldValue(secondary, commonFieldName);
-            compareField(differences, primary.id(), commonFieldName, primaryValue, secondaryValue);
+            compareField(differences, primary.getId(), commonFieldName, primaryValue, secondaryValue);
         });
         
         // Compare metadata if present
-        if (primary.metadata() != null && secondary.metadata() != null) {
-            compareMetadata(differences, primary.id(), primary.metadata(), secondary.metadata());
-        } else if (primary.metadata() != null || secondary.metadata() != null) {
+        if (primary.getMetadata() != null && secondary.getMetadata() != null) {
+            compareMetadata(differences, primary.getId(), primary.getMetadata(), secondary.getMetadata());
+        } else if (primary.getMetadata() != null || secondary.getMetadata() != null) {
             differences.add(DiffResult.ContentDifference.builder()
-                .documentId(primary.id())
+                .documentId(primary.getId())
                 .field("metadata")
-                .primaryValue(primary.metadata())
-                .secondaryValue(secondary.metadata())
+                .primaryValue(primary.getMetadata())
+                .secondaryValue(secondary.getMetadata())
                 .differenceType("MISSING")
                 .build());
         }
@@ -97,15 +97,21 @@ public class ContentComparator {
     
     private Object getFieldValue(NormalizedDocument document, String commonFieldName) {
         try {
-            for (RecordComponent component : NormalizedDocument.class.getRecordComponents()) {
-                if (component.getName().equals(commonFieldName)) {
-                    return component.getAccessor().invoke(document);
-                }
-            }
+            // Use getter method based on field name
+            String getterName = "get" + capitalize(commonFieldName);
+            Method getter = NormalizedDocument.class.getMethod(getterName);
+            return getter.invoke(document);
         } catch (Exception e) {
-            log.warn("Failed to access field '{}' on EmailDocument: {}", commonFieldName, e.getMessage());
+            log.warn("Failed to access field '{}' on NormalizedDocument: {}", commonFieldName, e.getMessage());
         }
         return null;
+    }
+    
+    private String capitalize(String fieldName) {
+        if (fieldName == null || fieldName.isEmpty()) {
+            return fieldName;
+        }
+        return Character.toUpperCase(fieldName.charAt(0)) + fieldName.substring(1);
     }
     
     private void compareField(List<DiffResult.ContentDifference> differences, String docId, 

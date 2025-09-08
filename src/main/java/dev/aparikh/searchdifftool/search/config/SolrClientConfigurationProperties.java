@@ -1,4 +1,4 @@
-package dev.aparikh.searchdifftool.search.solr;
+package dev.aparikh.searchdifftool.search.config;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 

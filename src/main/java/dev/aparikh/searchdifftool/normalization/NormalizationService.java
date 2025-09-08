@@ -1,56 +1,59 @@
 package dev.aparikh.searchdifftool.normalization;
 
-import dev.aparikh.searchdifftool.search.solr.schema.SchemaMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.solr.common.SolrDocument;
 import org.springframework.stereotype.Service;
 
+import java.lang.reflect.Method;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Service
 @Slf4j
 @RequiredArgsConstructor
 public class NormalizationService {
     
-    private final SchemaMapper schemaMapper;
     private final FieldMappingConfigurationProperties fieldMappingConfigurationProperties;
     
     public NormalizedDocument normalize(SolrDocument doc, boolean isPrimary) {
-        Map<String, Object> commonDoc = schemaMapper.mapDocumentToCommon(doc, isPrimary);
+        Map<String, Object> commonDoc = mapDocumentToCommon(doc, isPrimary);
         
-        // Build field values array dynamically based on configuration
-        Object[] fieldValues = new Object[9]; // NormalizedDocument has 9 fields
+        // Dynamically build NormalizedDocument using configuration and reflection with setters
+        Map<String, FieldMappingConfigurationProperties.FieldMapping> fields = fieldMappingConfigurationProperties.getFields();
         
-        // Get field values dynamically using configuration
-        for (Map.Entry<String, FieldMappingConfigurationProperties.FieldMapping> entry : fieldMappingConfigurationProperties.getFields().entrySet()) {
-            String commonFieldName = entry.getKey();
-            String dataType = entry.getValue().type();
+        try {
+            // Create new instance using no-args constructor
+            NormalizedDocument document = new NormalizedDocument();
             
-            Object value = getValueByType(commonDoc, commonFieldName, dataType);
-            setFieldValueByName(fieldValues, commonFieldName, value);
+            // Iterate through all configured fields dynamically
+            for (Map.Entry<String, FieldMappingConfigurationProperties.FieldMapping> entry : fields.entrySet()) {
+                String fieldName = entry.getKey();
+                String fieldType = entry.getValue().type();
+                Object value = getValueByType(commonDoc, fieldName, fieldType);
+
+                // Use reflection to call setter method based on field name
+                String setterName = "set" + capitalize(fieldName);
+                try {
+                    Method setter = NormalizedDocument.class.getMethod(setterName, getFieldType(fieldType));
+                    setter.invoke(document, value);
+                } catch (NoSuchMethodException e) {
+                    // Skip fields that don't have corresponding setters - they'll be available in metadata
+                    log.debug("No setter found for field '{}', skipping", fieldName);
+                }
+            }
+            
+            // Set metadata and source using setters
+            document.setMetadata(commonDoc);
+            document.setSource(isPrimary ? "primary" : "secondary");
+            
+            return document;
+            
+        } catch (Exception e) {
+            log.error("Failed to create NormalizedDocument using reflection", e);
+            throw new IllegalStateException("Failed to create NormalizedDocument using reflection", e);
         }
-        
-        // Set metadata and source
-        fieldValues[7] = commonDoc; // metadata
-        fieldValues[8] = isPrimary ? "primary" : "secondary"; // source
-        
-        return new NormalizedDocument(
-            (String) fieldValues[0], // id
-            (String) fieldValues[1], // subject  
-            (String) fieldValues[2], // from
-            (String) fieldValues[3], // to
-            (String) fieldValues[4], // body
-            (LocalDateTime) fieldValues[5], // date
-            (List<String>) fieldValues[6], // attachments
-            (Map<String, Object>) fieldValues[7], // metadata
-            (String) fieldValues[8] // source
-        );
     }
     
     private Object getValueByType(Map<String, Object> doc, String fieldName, String dataType) {
@@ -65,19 +68,6 @@ public class NormalizationService {
         };
     }
     
-    private void setFieldValueByName(Object[] fieldValues, String fieldName, Object value) {
-        switch (fieldName) {
-            case "id" -> fieldValues[0] = value;
-            case "subject" -> fieldValues[1] = value;
-            case "from" -> fieldValues[2] = value;
-            case "to" -> fieldValues[3] = value;
-            case "body" -> fieldValues[4] = value;
-            case "date" -> fieldValues[5] = value;
-            case "attachments" -> fieldValues[6] = value;
-            default -> log.warn("Unknown field name: {}", fieldName);
-        }
-    }
-    
     private String getStringValue(Map<String, Object> doc, String key) {
         Object value = doc.get(key);
         return value != null ? value.toString() : null;
@@ -85,8 +75,8 @@ public class NormalizationService {
     
     private LocalDateTime getDateValue(Map<String, Object> doc, String key) {
         Object value = doc.get(key);
-        if (value instanceof Date) {
-            return ((Date) value).toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();
+        if (value instanceof Date date) {
+            return date.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();
         }
         return null;
     }
@@ -98,5 +88,47 @@ public class NormalizationService {
             return (List<String>) value;
         }
         return new ArrayList<>();
+    }
+
+    public Map<String, Object> mapDocumentToCommon(SolrDocument doc, boolean isPrimary) {
+        Map<String, String> mapping = isPrimary ?
+                fieldMappingConfigurationProperties.getPrimaryToCommon() :
+                fieldMappingConfigurationProperties.getSecondaryToCommon();
+
+        Map<String, Object> commonDoc = new HashMap<>();
+
+        for (Map.Entry<String, String> entry : mapping.entrySet()) {
+            String solrField = entry.getKey();
+            String commonField = entry.getValue();
+
+            if (doc.containsKey(solrField)) {
+                commonDoc.put(commonField, doc.getFieldValue(solrField));
+            }
+        }
+
+        // Also include any unmapped fields
+        for (String fieldName : doc.getFieldNames()) {
+            if (!mapping.containsKey(fieldName)) {
+                commonDoc.put(fieldName, doc.getFieldValue(fieldName));
+            }
+        }
+
+        return commonDoc;
+    }
+    
+    private String capitalize(String fieldName) {
+        if (fieldName == null || fieldName.isEmpty()) {
+            return fieldName;
+        }
+        return Character.toUpperCase(fieldName.charAt(0)) + fieldName.substring(1);
+    }
+    
+    private Class<?> getFieldType(String dataType) {
+        return switch (dataType.toLowerCase()) {
+            case "string" -> String.class;
+            case "date" -> LocalDateTime.class;
+            case "list" -> List.class;
+            default -> String.class; // Default to string for unknown types
+        };
     }
 }

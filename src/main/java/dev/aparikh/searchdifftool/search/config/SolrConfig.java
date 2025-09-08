@@ -1,4 +1,4 @@
-package dev.aparikh.searchdifftool.search.solr;
+package dev.aparikh.searchdifftool.search.config;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.solr.client.solrj.SolrClient;
