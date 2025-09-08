@@ -42,8 +42,9 @@ cd search-diff-tool
 # Run tests (unit tests only, integration tests require Docker)
 ./gradlew test
 
-# Run integration tests (requires Docker)
-./gradlew test -Dspring.profiles.active=integration
+# Run integration tests (requires Docker - currently disabled by @Disabled annotation)
+# Remove @Disabled from SearchDiffIntegrationTest.java to enable
+./gradlew test
 ```
 
 ### Configuration
@@ -64,10 +65,6 @@ solr.connection.timeout=5000
 solr.socket.timeout=30000
 solr.max.connections=100
 solr.max.connections.per.route=20
-
-# Search Configuration
-search.default.max.results=1000
-search.comparison.batch.size=100
 ```
 
 ### Schema Field Mapping
@@ -79,11 +76,19 @@ Customize field mappings in `FieldMappingConfig.java`:
 primaryToCommon.put("email_subject", "subject");
 primaryToCommon.put("email_from", "from");
 primaryToCommon.put("email_to", "to");
+primaryToCommon.put("email_body", "body");
+primaryToCommon.put("email_date", "date");
+primaryToCommon.put("email_id", "id");
+primaryToCommon.put("email_attachments", "attachments");
 
 // Secondary system field mappings  
 secondaryToCommon.put("subject_field", "subject");
 secondaryToCommon.put("from_field", "from");
 secondaryToCommon.put("to_field", "to");
+secondaryToCommon.put("body_field", "body");
+secondaryToCommon.put("date_field", "date");
+secondaryToCommon.put("message_id", "id");
+secondaryToCommon.put("attachment_list", "attachments");
 ```
 
 ### Run the Application
@@ -378,13 +383,14 @@ When validation fails or an error occurs.
 
 ### Run Unit Tests
 ```bash
-./gradlew test --tests="*Test" --continue
+./gradlew test --continue
 ```
 
 ### Run Integration Tests (Requires Docker)
 ```bash
-# Enable integration tests by removing @Disabled annotation
-./gradlew test --tests="*IntegrationTest*"
+# First, enable integration tests by removing @Disabled annotation from SearchDiffIntegrationTest.java
+# Then run:
+./gradlew test --continue
 ```
 
 ### Test Coverage
@@ -454,10 +460,10 @@ public class CustomComparator {
 
 ## 📈 Performance Considerations
 
-- **Batch Size**: Configure `search.comparison.batch.size` for optimal memory usage
-- **Connection Pooling**: Adjust Solr connection pool settings based on load
-- **Result Limits**: Use `maxResults` parameter to control comparison scope
+- **Connection Pooling**: Adjust Solr connection pool settings in application.properties
+- **Result Limits**: Use `maxResults` parameter to control comparison scope (1-10000)
 - **Pagination**: Use `start` parameter for large result sets
+- **Memory Usage**: Large result sets are processed in-memory during comparison
 
 ## 🚦 Monitoring
 
