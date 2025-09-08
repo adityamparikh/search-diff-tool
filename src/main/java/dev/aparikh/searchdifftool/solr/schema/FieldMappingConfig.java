@@ -13,18 +13,17 @@ import java.util.Map;
 @ConfigurationProperties(prefix = "schema.mapping")
 public class FieldMappingConfig {
     
-    // New structure: common field name -> {primary: field, secondary: field}
+    // Configuration structure: common field name -> {primary: field, secondary: field}
     private Map<String, FieldMapping> fields = new HashMap<>();
     
-    // Maintain backward compatibility with existing SchemaMapper
+    // Backward compatibility maps for existing SchemaMapper
     private Map<String, String> primaryToCommon = new HashMap<>();
     private Map<String, String> secondaryToCommon = new HashMap<>();
     
     @PostConstruct
     public void processConfiguration() {
         if (fields.isEmpty()) {
-            initializeDefaultMappings();
-            log.warn("No field mappings configured, using default mappings");
+            throw new IllegalStateException("No field mappings configured in application.yaml. Please configure schema.mapping.fields.");
         }
         
         // Build the reverse lookup maps for SchemaMapper compatibility
@@ -49,16 +48,6 @@ public class FieldMappingConfig {
                 secondaryToCommon.put(mapping.getSecondary(), commonField);
             }
         }
-    }
-    
-    private void initializeDefaultMappings() {
-        fields.put("subject", new FieldMapping("email_subject", "subject_field"));
-        fields.put("from", new FieldMapping("email_from", "from_field"));
-        fields.put("to", new FieldMapping("email_to", "to_field"));
-        fields.put("body", new FieldMapping("email_body", "body_field"));
-        fields.put("date", new FieldMapping("email_date", "date_field"));
-        fields.put("id", new FieldMapping("email_id", "message_id"));
-        fields.put("attachments", new FieldMapping("email_attachments", "attachment_list"));
     }
     
     @Data

@@ -36,8 +36,8 @@ class FieldMappingConfigTest {
     }
 
     @Test
-    void shouldLoadDefaultMappingsFromYaml() {
-        // Verify that default mappings from YAML are loaded in new structure
+    void shouldLoadMappingsFromYaml() {
+        // Verify that mappings from YAML are loaded in new structure
         assertThat(fieldMappingConfig.getFields())
                 .containsKey("subject")
                 .containsKey("from")

@@ -38,18 +38,18 @@ public class SchemaMapper {
             String solrField = mapping.getOrDefault(commonField, commonField);
             Object value = entry.getValue();
             
-            if (queryBuilder.length() > 0) {
+            if (!queryBuilder.isEmpty()) {
                 queryBuilder.append(" AND ");
             }
             
-            if (value instanceof String && ((String) value).contains(" ")) {
+            if (value instanceof String val && val.contains(" ")) {
                 queryBuilder.append(solrField).append(":\"").append(value).append("\"");
             } else {
                 queryBuilder.append(solrField).append(":").append(value);
             }
         }
         
-        query.setQuery(queryBuilder.length() > 0 ? queryBuilder.toString() : "*:*");
+        query.setQuery(!queryBuilder.isEmpty() ? queryBuilder.toString() : "*:*");
         return query;
     }
     
