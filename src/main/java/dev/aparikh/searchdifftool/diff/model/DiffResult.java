@@ -1,6 +1,7 @@
 package dev.aparikh.searchdifftool.diff.model;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import dev.aparikh.searchdifftool.diff.comparison.DifferenceType;
 import lombok.Data;
 import lombok.Builder;
 import lombok.NoArgsConstructor;
@@ -43,7 +44,7 @@ public class DiffResult {
         private String field;
         private Object primaryValue;
         private Object secondaryValue;
-        private String differenceType; // MISSING, DIFFERENT, TYPE_MISMATCH
+        private DifferenceType differenceType;
     }
     
     @Data

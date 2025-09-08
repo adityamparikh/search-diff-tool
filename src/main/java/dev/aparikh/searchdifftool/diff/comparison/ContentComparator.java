@@ -88,7 +88,7 @@ public class ContentComparator {
                 .field("metadata")
                 .primaryValue(primary.getMetadata())
                 .secondaryValue(secondary.getMetadata())
-                .differenceType("MISSING")
+                .differenceType(primary.getMetadata() != null ? DifferenceType.MISSING_IN_SECONDARY : DifferenceType.MISSING_IN_PRIMARY)
                 .build());
         }
         
@@ -118,7 +118,7 @@ public class ContentComparator {
                              String fieldName, Object primaryValue, Object secondaryValue) {
         
         if (!Objects.equals(primaryValue, secondaryValue)) {
-            String differenceType = determineDifferenceType(primaryValue, secondaryValue);
+            DifferenceType differenceType = determineDifferenceType(primaryValue, secondaryValue);
             
             differences.add(DiffResult.ContentDifference.builder()
                 .documentId(docId)
@@ -153,16 +153,16 @@ public class ContentComparator {
         }
     }
     
-    private String determineDifferenceType(Object primaryValue, Object secondaryValue) {
+    private DifferenceType determineDifferenceType(Object primaryValue, Object secondaryValue) {
         if (primaryValue == null && secondaryValue != null) {
-            return "MISSING_IN_PRIMARY";
+            return DifferenceType.MISSING_IN_PRIMARY;
         } else if (primaryValue != null && secondaryValue == null) {
-            return "MISSING_IN_SECONDARY";
+            return DifferenceType.MISSING_IN_SECONDARY;
         } else if (primaryValue != null && secondaryValue != null && 
                    !primaryValue.getClass().equals(secondaryValue.getClass())) {
-            return "TYPE_MISMATCH";
+            return DifferenceType.TYPE_MISMATCH;
         } else {
-            return "DIFFERENT";
+            return DifferenceType.DIFFERENT;
         }
     }
     

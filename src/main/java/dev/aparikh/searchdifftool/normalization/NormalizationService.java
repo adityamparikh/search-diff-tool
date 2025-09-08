@@ -14,7 +14,10 @@ import java.util.*;
 @Slf4j
 @RequiredArgsConstructor
 public class NormalizationService {
-    
+
+    public static final String STRING = "string";
+    public static final String DATE = "date";
+    public static final String LIST = "list";
     private final FieldMappingConfigurationProperties fieldMappingConfigurationProperties;
     
     public NormalizedDocument normalize(SolrDocument doc, boolean isPrimary) {
@@ -58,9 +61,9 @@ public class NormalizationService {
     
     private Object getValueByType(Map<String, Object> doc, String fieldName, String dataType) {
         return switch (dataType.toLowerCase()) {
-            case "string" -> getStringValue(doc, fieldName);
-            case "date" -> getDateValue(doc, fieldName);
-            case "list" -> getListValue(doc, fieldName);
+            case STRING -> getStringValue(doc, fieldName);
+            case DATE -> getDateValue(doc, fieldName);
+            case LIST -> getListValue(doc, fieldName);
             default -> {
                 log.warn("Unknown data type '{}' for field '{}', treating as string", dataType, fieldName);
                 yield getStringValue(doc, fieldName);
@@ -125,9 +128,9 @@ public class NormalizationService {
     
     private Class<?> getFieldType(String dataType) {
         return switch (dataType.toLowerCase()) {
-            case "string" -> String.class;
-            case "date" -> LocalDateTime.class;
-            case "list" -> List.class;
+            case STRING -> String.class;
+            case DATE -> LocalDateTime.class;
+            case LIST -> List.class;
             default -> String.class; // Default to string for unknown types
         };
     }
