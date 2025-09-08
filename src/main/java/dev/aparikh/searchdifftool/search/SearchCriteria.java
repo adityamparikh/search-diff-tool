@@ -1,4 +1,4 @@
-package dev.aparikh.searchdifftool.email.model;
+package dev.aparikh.searchdifftool.search;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Data;

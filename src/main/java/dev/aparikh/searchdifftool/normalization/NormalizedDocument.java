@@ -1,10 +1,10 @@
-package dev.aparikh.searchdifftool.email.model;
+package dev.aparikh.searchdifftool.normalization;
 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
-public record EmailDocument(
+public record NormalizedDocument(
     String id,
     String subject,
     String from,

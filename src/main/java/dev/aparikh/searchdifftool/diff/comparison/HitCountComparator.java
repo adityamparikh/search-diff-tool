@@ -1,7 +1,7 @@
 package dev.aparikh.searchdifftool.diff.comparison;
 
 import dev.aparikh.searchdifftool.diff.model.DiffResult;
-import dev.aparikh.searchdifftool.email.EmailSearchService;
+import dev.aparikh.searchdifftool.search.SearchResult;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
@@ -9,11 +9,11 @@ import org.springframework.stereotype.Component;
 @Component
 public class HitCountComparator {
     
-    public DiffResult.HitCounts compare(EmailSearchService.SearchResult primaryResult, 
-                                       EmailSearchService.SearchResult secondaryResult) {
+    public DiffResult.HitCounts compare(SearchResult primaryResult,
+                                        SearchResult secondaryResult) {
         
-        long primaryCount = primaryResult.getTotalHits();
-        long secondaryCount = secondaryResult.getTotalHits();
+        long primaryCount = primaryResult.totalHits();
+        long secondaryCount = secondaryResult.totalHits();
         long difference = primaryCount - secondaryCount;
         
         log.info("Hit count comparison - Primary: {}, Secondary: {}, Difference: {}", 

@@ -1,7 +1,7 @@
 package dev.aparikh.searchdifftool;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import dev.aparikh.searchdifftool.api.model.SearchRequest;
+import dev.aparikh.searchdifftool.api.SearchRequest;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Disabled;

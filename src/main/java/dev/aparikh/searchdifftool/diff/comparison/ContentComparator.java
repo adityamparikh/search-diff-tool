@@ -1,8 +1,8 @@
 package dev.aparikh.searchdifftool.diff.comparison;
 
 import dev.aparikh.searchdifftool.diff.model.DiffResult;
-import dev.aparikh.searchdifftool.email.model.EmailDocument;
-import dev.aparikh.searchdifftool.solr.schema.FieldMappingConfig;
+import dev.aparikh.searchdifftool.normalization.NormalizedDocument;
+import dev.aparikh.searchdifftool.normalization.FieldMappingConfigurationProperties;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,28 +21,28 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class ContentComparator {
     
-    private final FieldMappingConfig fieldMappingConfig;
+    private final FieldMappingConfigurationProperties fieldMappingConfigurationProperties;
     
-    public ComparisonResult compareDocuments(List<EmailDocument> primaryDocs, 
-                                           List<EmailDocument> secondaryDocs) {
+    public ComparisonResult compareDocuments(List<NormalizedDocument> primaryDocs,
+                                           List<NormalizedDocument> secondaryDocs) {
         
         // Create maps for quick lookup
-        Map<String, EmailDocument> primaryMap = primaryDocs.stream()
-            .collect(Collectors.toMap(doc -> doc.id(), doc -> doc));
+        Map<String, NormalizedDocument> primaryMap = primaryDocs.stream()
+            .collect(Collectors.toMap(NormalizedDocument::id, doc -> doc));
             
-        Map<String, EmailDocument> secondaryMap = secondaryDocs.stream()
-            .collect(Collectors.toMap(doc -> doc.id(), doc -> doc));
+        Map<String, NormalizedDocument> secondaryMap = secondaryDocs.stream()
+            .collect(Collectors.toMap(NormalizedDocument::id, doc -> doc));
         
         List<DiffResult.ContentDifference> differences = new ArrayList<>();
         Map<String, Integer> differencesByField = new HashMap<>();
         long documentsWithDifferences = 0;
         
         // Compare documents that exist in both sets
-        for (Map.Entry<String, EmailDocument> entry : primaryMap.entrySet()) {
+        for (Map.Entry<String, NormalizedDocument> entry : primaryMap.entrySet()) {
             String docId = entry.getKey();
             if (secondaryMap.containsKey(docId)) {
-                EmailDocument primaryDoc = entry.getValue();
-                EmailDocument secondaryDoc = secondaryMap.get(docId);
+                NormalizedDocument primaryDoc = entry.getValue();
+                NormalizedDocument secondaryDoc = secondaryMap.get(docId);
                 
                 List<DiffResult.ContentDifference> docDifferences = compareDocument(primaryDoc, secondaryDoc);
                 differences.addAll(docDifferences);
@@ -69,11 +69,11 @@ public class ContentComparator {
             .build();
     }
     
-    private List<DiffResult.ContentDifference> compareDocument(EmailDocument primary, EmailDocument secondary) {
+    private List<DiffResult.ContentDifference> compareDocument(NormalizedDocument primary, NormalizedDocument secondary) {
         List<DiffResult.ContentDifference> differences = new ArrayList<>();
         
         // Compare fields dynamically based on configuration
-        fieldMappingConfig.getFields().keySet().forEach(commonFieldName -> {
+        fieldMappingConfigurationProperties.getFields().keySet().forEach(commonFieldName -> {
             Object primaryValue = getFieldValue(primary, commonFieldName);
             Object secondaryValue = getFieldValue(secondary, commonFieldName);
             compareField(differences, primary.id(), commonFieldName, primaryValue, secondaryValue);
@@ -95,9 +95,9 @@ public class ContentComparator {
         return differences;
     }
     
-    private Object getFieldValue(EmailDocument document, String commonFieldName) {
+    private Object getFieldValue(NormalizedDocument document, String commonFieldName) {
         try {
-            for (RecordComponent component : EmailDocument.class.getRecordComponents()) {
+            for (RecordComponent component : NormalizedDocument.class.getRecordComponents()) {
                 if (component.getName().equals(commonFieldName)) {
                     return component.getAccessor().invoke(document);
                 }

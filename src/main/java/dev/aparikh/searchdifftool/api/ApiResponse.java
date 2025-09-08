@@ -1,4 +1,4 @@
-package dev.aparikh.searchdifftool.api.model;
+package dev.aparikh.searchdifftool.api;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Data;
@@ -22,26 +22,12 @@ public class ApiResponse<T> {
     
     @Builder.Default
     private LocalDateTime timestamp = LocalDateTime.now();
-    
-    public static <T> ApiResponse<T> success(T data) {
-        return ApiResponse.<T>builder()
-            .success(true)
-            .data(data)
-            .build();
-    }
-    
+
     public static <T> ApiResponse<T> success(T data, String message) {
         return ApiResponse.<T>builder()
             .success(true)
             .data(data)
             .message(message)
-            .build();
-    }
-    
-    public static <T> ApiResponse<T> error(String error) {
-        return ApiResponse.<T>builder()
-            .success(false)
-            .error(error)
             .build();
     }
     

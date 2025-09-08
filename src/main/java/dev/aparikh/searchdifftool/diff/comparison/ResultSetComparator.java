@@ -1,6 +1,6 @@
 package dev.aparikh.searchdifftool.diff.comparison;
 
-import dev.aparikh.searchdifftool.email.model.EmailDocument;
+import dev.aparikh.searchdifftool.normalization.NormalizedDocument;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -14,24 +14,24 @@ import java.util.stream.Collectors;
 @Component
 public class ResultSetComparator {
     
-    public SetDifference findDifferences(List<EmailDocument> primaryDocs, 
-                                       List<EmailDocument> secondaryDocs) {
+    public SetDifference findDifferences(List<NormalizedDocument> primaryDocs,
+                                       List<NormalizedDocument> secondaryDocs) {
         
         Set<String> primaryIds = primaryDocs.stream()
-            .map(doc -> doc.id())
+            .map(NormalizedDocument::id)
             .collect(Collectors.toSet());
             
         Set<String> secondaryIds = secondaryDocs.stream()
-            .map(doc -> doc.id())
+            .map(NormalizedDocument::id)
             .collect(Collectors.toSet());
         
         List<String> onlyInPrimary = primaryIds.stream()
             .filter(id -> !secondaryIds.contains(id))
-            .collect(Collectors.toList());
-            
+            .toList();
+
         List<String> onlyInSecondary = secondaryIds.stream()
             .filter(id -> !primaryIds.contains(id))
-            .collect(Collectors.toList());
+            .toList();
         
         log.info("Set differences - Only in primary: {}, Only in secondary: {}", 
             onlyInPrimary.size(), onlyInSecondary.size());
@@ -55,15 +55,5 @@ public class ResultSetComparator {
     public static class SetDifference {
         private List<String> onlyInPrimary;
         private List<String> onlyInSecondary;
-        
-        public SetDifference() {
-            this.onlyInPrimary = new ArrayList<>();
-            this.onlyInSecondary = new ArrayList<>();
-        }
-        
-        public SetDifference(List<String> onlyInPrimary, List<String> onlyInSecondary) {
-            this.onlyInPrimary = onlyInPrimary != null ? onlyInPrimary : new ArrayList<>();
-            this.onlyInSecondary = onlyInSecondary != null ? onlyInSecondary : new ArrayList<>();
-        }
     }
 }

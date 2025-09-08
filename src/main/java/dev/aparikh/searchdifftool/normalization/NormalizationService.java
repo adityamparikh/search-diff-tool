@@ -1,20 +1,11 @@
-package dev.aparikh.searchdifftool.email;
+package dev.aparikh.searchdifftool.normalization;
 
-import dev.aparikh.searchdifftool.email.model.EmailDocument;
-import dev.aparikh.searchdifftool.email.model.SearchCriteria;
-import dev.aparikh.searchdifftool.solr.client.SolrClientService;
-import dev.aparikh.searchdifftool.solr.schema.FieldMappingConfig;
-import dev.aparikh.searchdifftool.solr.schema.SchemaMapper;
+import dev.aparikh.searchdifftool.search.solr.schema.SchemaMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.solr.client.solrj.SolrQuery;
-import org.apache.solr.client.solrj.SolrServerException;
-import org.apache.solr.client.solrj.response.QueryResponse;
 import org.apache.solr.common.SolrDocument;
-import org.apache.solr.common.SolrDocumentList;
 import org.springframework.stereotype.Service;
 
-import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
@@ -22,70 +13,22 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
-@Slf4j
 @Service
+@Slf4j
 @RequiredArgsConstructor
-public class EmailSearchService {
+public class NormalizationService {
     
-    private final SolrClientService solrClientService;
     private final SchemaMapper schemaMapper;
-    private final FieldMappingConfig fieldMappingConfig;
+    private final FieldMappingConfigurationProperties fieldMappingConfigurationProperties;
     
-    public SearchResult searchPrimary(SearchCriteria criteria) {
-        try {
-            SolrQuery query = schemaMapper.mapQueryForPrimary(criteria.toQueryMap());
-            query.setRows(criteria.getMaxResults());
-            query.setStart(criteria.getStart());
-            
-            QueryResponse response = solrClientService.getPrimaryClient().query(query);
-            return convertToSearchResult(response, true);
-            
-        } catch (SolrServerException | IOException e) {
-            log.error("Error searching primary Solr instance", e);
-            throw new RuntimeException("Primary search failed", e);
-        }
-    }
-    
-    public SearchResult searchSecondary(SearchCriteria criteria) {
-        try {
-            SolrQuery query = schemaMapper.mapQueryForSecondary(criteria.toQueryMap());
-            query.setRows(criteria.getMaxResults());
-            query.setStart(criteria.getStart());
-            
-            QueryResponse response = solrClientService.getSecondaryClient().query(query);
-            return convertToSearchResult(response, false);
-            
-        } catch (SolrServerException | IOException e) {
-            log.error("Error searching secondary Solr instance", e);
-            throw new RuntimeException("Secondary search failed", e);
-        }
-    }
-    
-    private SearchResult convertToSearchResult(QueryResponse response, boolean isPrimary) {
-        SolrDocumentList docs = response.getResults();
-        List<EmailDocument> emailDocs = new ArrayList<>();
-        
-        for (SolrDocument doc : docs) {
-            EmailDocument emailDoc = convertToEmailDocument(doc, isPrimary);
-            emailDocs.add(emailDoc);
-        }
-        
-        return SearchResult.builder()
-            .documents(emailDocs)
-            .totalHits(docs.getNumFound())
-            .source(isPrimary ? "primary" : "secondary")
-            .queryTime(response.getQTime())
-            .build();
-    }
-    
-    private EmailDocument convertToEmailDocument(SolrDocument doc, boolean isPrimary) {
+    public NormalizedDocument normalize(SolrDocument doc, boolean isPrimary) {
         Map<String, Object> commonDoc = schemaMapper.mapDocumentToCommon(doc, isPrimary);
         
         // Build field values array dynamically based on configuration
-        Object[] fieldValues = new Object[9]; // EmailDocument has 9 fields
+        Object[] fieldValues = new Object[9]; // NormalizedDocument has 9 fields
         
         // Get field values dynamically using configuration
-        for (Map.Entry<String, FieldMappingConfig.FieldMapping> entry : fieldMappingConfig.getFields().entrySet()) {
+        for (Map.Entry<String, FieldMappingConfigurationProperties.FieldMapping> entry : fieldMappingConfigurationProperties.getFields().entrySet()) {
             String commonFieldName = entry.getKey();
             String dataType = entry.getValue().type();
             
@@ -97,7 +40,7 @@ public class EmailSearchService {
         fieldValues[7] = commonDoc; // metadata
         fieldValues[8] = isPrimary ? "primary" : "secondary"; // source
         
-        return new EmailDocument(
+        return new NormalizedDocument(
             (String) fieldValues[0], // id
             (String) fieldValues[1], // subject  
             (String) fieldValues[2], // from
@@ -155,14 +98,5 @@ public class EmailSearchService {
             return (List<String>) value;
         }
         return new ArrayList<>();
-    }
-    
-    @lombok.Data
-    @lombok.Builder
-    public static class SearchResult {
-        private List<EmailDocument> documents;
-        private long totalHits;
-        private String source;
-        private long queryTime;
     }
 }

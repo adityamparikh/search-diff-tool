@@ -1,6 +1,6 @@
 package dev.aparikh.searchdifftool.api.exception;
 
-import dev.aparikh.searchdifftool.api.model.ApiResponse;
+import dev.aparikh.searchdifftool.api.ApiResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

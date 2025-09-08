@@ -1,5 +1,6 @@
-package dev.aparikh.searchdifftool.solr.schema;
+package dev.aparikh.searchdifftool.search.solr.schema;
 
+import dev.aparikh.searchdifftool.normalization.FieldMappingConfigurationProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.solr.client.solrj.SolrQuery;
@@ -14,18 +15,18 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class SchemaMapper {
     
-    private final FieldMappingConfig fieldMappingConfig;
+    private final FieldMappingConfigurationProperties fieldMappingConfigurationProperties;
     
     public SolrQuery mapQueryForPrimary(Map<String, Object> searchCriteria) {
         SolrQuery query = new SolrQuery();
-        Map<String, String> mapping = fieldMappingConfig.getPrimaryToCommon();
+        Map<String, String> mapping = fieldMappingConfigurationProperties.getPrimaryToCommon();
         
         return buildSolrQuery(query, searchCriteria, getReverseMapping(mapping));
     }
     
     public SolrQuery mapQueryForSecondary(Map<String, Object> searchCriteria) {
         SolrQuery query = new SolrQuery();
-        Map<String, String> mapping = fieldMappingConfig.getSecondaryToCommon();
+        Map<String, String> mapping = fieldMappingConfigurationProperties.getSecondaryToCommon();
         
         return buildSolrQuery(query, searchCriteria, getReverseMapping(mapping));
     }
@@ -55,8 +56,8 @@ public class SchemaMapper {
     
     public Map<String, Object> mapDocumentToCommon(SolrDocument doc, boolean isPrimary) {
         Map<String, String> mapping = isPrimary ? 
-            fieldMappingConfig.getPrimaryToCommon() : 
-            fieldMappingConfig.getSecondaryToCommon();
+            fieldMappingConfigurationProperties.getPrimaryToCommon() :
+            fieldMappingConfigurationProperties.getSecondaryToCommon();
             
         Map<String, Object> commonDoc = new HashMap<>();
         

@@ -1,4 +1,4 @@
-package dev.aparikh.searchdifftool.api.model;
+package dev.aparikh.searchdifftool.api;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Data;

@@ -1,4 +1,4 @@
-package dev.aparikh.searchdifftool.solr.schema;
+package dev.aparikh.searchdifftool.normalization;
 
 import jakarta.annotation.PostConstruct;
 import lombok.Data;
@@ -13,9 +13,9 @@ import java.util.Map;
 @Data
 @Component
 @ConfigurationProperties(prefix = "schema.mapping")
-public class FieldMappingConfig {
+public class FieldMappingConfigurationProperties {
 
-    private static final Logger log = LoggerFactory.getLogger(FieldMappingConfig.class);
+    private static final Logger log = LoggerFactory.getLogger(FieldMappingConfigurationProperties.class);
 
     // Configuration structure: common field name -> {primary: field, secondary: field}
     private Map<String, FieldMapping> fields = new HashMap<>();
