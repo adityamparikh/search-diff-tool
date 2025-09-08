@@ -49,47 +49,61 @@ cd search-diff-tool
 
 ### Configuration
 
-Configure your Solr instances in `src/main/resources/application.properties`:
+Configure your Solr instances in `src/main/resources/application.yaml`:
 
-```properties
-# Primary Solr Instance
-solr.primary.url=http://localhost:8983/solr
-solr.primary.core=emails_primary
+```yaml
+spring:
+  application:
+    name: search-diff-tool
 
-# Secondary Solr Instance  
-solr.secondary.url=http://localhost:8984/solr
-solr.secondary.core=emails_secondary
+# Solr Configuration
+solr:
+  primary:
+    url: http://localhost:8983/solr
+    core: emails_primary
+  secondary:
+    url: http://localhost:8984/solr
+    core: emails_secondary
+  connection:
+    timeout: 5000
+    socket-timeout: 30000
+    max-connections: 100
+    max-connections-per-route: 20
 
-# Connection Settings
-solr.connection.timeout=5000
-solr.socket.timeout=30000
-solr.max.connections=100
-solr.max.connections.per.route=20
+# Schema Field Mapping Configuration
+schema:
+  mapping:
+    primary-to-common:
+      email_subject: subject
+      email_from: from
+      email_to: to
+      email_body: body
+      email_date: date
+      email_id: id
+      email_attachments: attachments
+    secondary-to-common:
+      subject_field: subject
+      from_field: from
+      to_field: to
+      body_field: body
+      date_field: date
+      message_id: id
+      attachment_list: attachments
+
+# Logging Configuration
+logging:
+  level:
+    dev.aparikh.searchdifftool: DEBUG
+    org.apache.solr: WARN
 ```
 
 ### Schema Field Mapping
 
-Customize field mappings in `FieldMappingConfig.java`:
+The field mappings are now fully configurable through the YAML file above. If no mappings are provided, the application will use default mappings and log a warning. You can:
 
-```java
-// Primary system field mappings
-primaryToCommon.put("email_subject", "subject");
-primaryToCommon.put("email_from", "from");
-primaryToCommon.put("email_to", "to");
-primaryToCommon.put("email_body", "body");
-primaryToCommon.put("email_date", "date");
-primaryToCommon.put("email_id", "id");
-primaryToCommon.put("email_attachments", "attachments");
-
-// Secondary system field mappings  
-secondaryToCommon.put("subject_field", "subject");
-secondaryToCommon.put("from_field", "from");
-secondaryToCommon.put("to_field", "to");
-secondaryToCommon.put("body_field", "body");
-secondaryToCommon.put("date_field", "date");
-secondaryToCommon.put("message_id", "id");
-secondaryToCommon.put("attachment_list", "attachments");
-```
+1. **Customize existing mappings**: Modify the field names in the YAML configuration
+2. **Add new field mappings**: Simply add new key-value pairs under the respective sections
+3. **Use different field names**: Map your actual Solr field names to common normalized names
 
 ### Run the Application
 
@@ -428,14 +442,21 @@ src/main/java/dev/aparikh/searchdifftool/
 ## 🔧 Customization
 
 ### Adding New Field Mappings
-Edit `FieldMappingConfig.java` to add new field mappings:
+Add new field mappings directly in `application.yaml`:
 
-```java
-// Add new primary mappings
-primaryToCommon.put("custom_field", "normalized_field");
-
-// Add new secondary mappings  
-secondaryToCommon.put("different_custom_field", "normalized_field");
+```yaml
+schema:
+  mapping:
+    primary-to-common:
+      # Add your custom primary system field mappings
+      custom_email_field: normalized_field
+      priority_level: priority
+      department_code: department
+    secondary-to-common:
+      # Add your custom secondary system field mappings
+      different_email_field: normalized_field
+      importance_flag: priority
+      dept_id: department
 ```
 
 ### Custom Search Criteria
