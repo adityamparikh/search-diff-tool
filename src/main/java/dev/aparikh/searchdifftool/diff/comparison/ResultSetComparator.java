@@ -17,13 +17,13 @@ public class ResultSetComparator {
     public SetDifference findDifferences(List<NormalizedDocument> primaryDocs,
                                        List<NormalizedDocument> secondaryDocs) {
         
-        Set<String> primaryIds = primaryDocs.stream()
+        Set<String> primaryIds = primaryDocs != null ? primaryDocs.stream()
             .map(NormalizedDocument::getId)
-            .collect(Collectors.toSet());
+            .collect(Collectors.toSet()) : Set.of();
             
-        Set<String> secondaryIds = secondaryDocs.stream()
+        Set<String> secondaryIds = secondaryDocs != null ? secondaryDocs.stream()
             .map(NormalizedDocument::getId)
-            .collect(Collectors.toSet());
+            .collect(Collectors.toSet()) : Set.of();
         
         List<String> onlyInPrimary = primaryIds.stream()
             .filter(id -> !secondaryIds.contains(id))

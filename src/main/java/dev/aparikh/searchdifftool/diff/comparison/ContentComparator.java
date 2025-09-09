@@ -1,9 +1,8 @@
 package dev.aparikh.searchdifftool.diff.comparison;
 
-import dev.aparikh.searchdifftool.diff.model.DiffResult;
+import dev.aparikh.searchdifftool.diff.DiffResult;
 import dev.aparikh.searchdifftool.normalization.NormalizedDocument;
 import dev.aparikh.searchdifftool.normalization.FieldMappingConfigurationProperties;
-import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -61,12 +60,12 @@ public class ContentComparator {
         log.info("Content comparison completed - {} field differences across {} documents", 
             differences.size(), documentsWithDifferences);
         
-        return ComparisonResult.builder()
-            .differences(differences)
-            .documentsWithDifferences(documentsWithDifferences)
-            .totalFieldDifferences((long) differences.size())
-            .differencesByField(differencesByField)
-            .build();
+        return new ComparisonResult(
+            differences,
+            documentsWithDifferences,
+            differences.size(),
+            differencesByField
+        );
     }
     
     private List<DiffResult.ContentDifference> compareDocument(NormalizedDocument primary, NormalizedDocument secondary) {
@@ -158,37 +157,11 @@ public class ContentComparator {
             return DifferenceType.MISSING_IN_PRIMARY;
         } else if (primaryValue != null && secondaryValue == null) {
             return DifferenceType.MISSING_IN_SECONDARY;
-        } else if (primaryValue != null && secondaryValue != null && 
-                   !primaryValue.getClass().equals(secondaryValue.getClass())) {
+        } else if (primaryValue != null && !primaryValue.getClass().equals(secondaryValue.getClass())) {
             return DifferenceType.TYPE_MISMATCH;
         } else {
             return DifferenceType.DIFFERENT;
         }
     }
     
-    @Data
-    @lombok.Builder
-    public static class ComparisonResult {
-        private List<DiffResult.ContentDifference> differences;
-        private long documentsWithDifferences;
-        private long totalFieldDifferences;
-        private Map<String, Integer> differencesByField;
-        
-        public ComparisonResult() {
-            this.differences = new ArrayList<>();
-            this.documentsWithDifferences = 0;
-            this.totalFieldDifferences = 0;
-            this.differencesByField = new HashMap<>();
-        }
-        
-        public ComparisonResult(List<DiffResult.ContentDifference> differences,
-                               long documentsWithDifferences,
-                               long totalFieldDifferences,
-                               Map<String, Integer> differencesByField) {
-            this.differences = differences != null ? differences : new ArrayList<>();
-            this.documentsWithDifferences = documentsWithDifferences;
-            this.totalFieldDifferences = totalFieldDifferences;
-            this.differencesByField = differencesByField != null ? differencesByField : new HashMap<>();
-        }
-    }
 }

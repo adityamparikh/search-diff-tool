@@ -1,15 +1,12 @@
 package dev.aparikh.searchdifftool.diff;
 
 import dev.aparikh.searchdifftool.diff.comparison.ContentComparator;
+import dev.aparikh.searchdifftool.diff.comparison.ComparisonResult;
 import dev.aparikh.searchdifftool.diff.comparison.HitCountComparator;
 import dev.aparikh.searchdifftool.diff.comparison.ResultSetComparator;
-import dev.aparikh.searchdifftool.diff.model.DiffResult;
 import dev.aparikh.searchdifftool.normalization.NormalizedDocument;
-import dev.aparikh.searchdifftool.normalization.NormalizationService;
 import dev.aparikh.searchdifftool.search.SearchResult;
-import org.apache.solr.common.SolrDocument;
 
-import java.util.ArrayList;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -54,18 +51,18 @@ public class DiffService {
         DiffAnalysis analysis = compareDocs(primaryNormalizedDocs, secondaryNormalizedDocs);
         resultBuilder.onlyInPrimary(analysis.getSetDifference().getOnlyInPrimary());
         resultBuilder.onlyInSecondary(analysis.getSetDifference().getOnlyInSecondary());
-        resultBuilder.contentDifferences(analysis.getContentResult().getDifferences());
+        resultBuilder.contentDifferences(analysis.getContentResult().differences());
         
         // Build metrics
         long comparisonTime = System.currentTimeMillis() - startTime;
         DiffResult.ComparisonMetrics metrics = DiffResult.ComparisonMetrics.builder()
             .totalDocumentsCompared(Math.min(primaryNormalizedDocs.size(), secondaryNormalizedDocs.size()))
-            .documentsWithDifferences(analysis.getContentResult().getDocumentsWithDifferences())
-            .totalFieldDifferences(analysis.getContentResult().getTotalFieldDifferences())
+            .documentsWithDifferences(analysis.getContentResult().documentsWithDifferences())
+            .totalFieldDifferences(analysis.getContentResult().totalFieldDifferences())
             .queryTimePrimary(primaryResult.queryTime())
             .queryTimeSecondary(secondaryResult.queryTime())
             .comparisonTimeMs(comparisonTime)
-            .differencesByField(analysis.getContentResult().getDifferencesByField())
+            .differencesByField(analysis.getContentResult().differencesByField())
             .build();
         resultBuilder.metrics(metrics);
         
@@ -89,12 +86,12 @@ public class DiffService {
         ResultSetComparator.SetDifference setDifference = resultSetComparator.findDifferences(primaryDocs, secondaryDocs);
         
         // Compare content of common documents
-        ContentComparator.ComparisonResult contentDifferences = contentComparator.compareDocuments(primaryDocs, secondaryDocs);
+        ComparisonResult contentDifferences = contentComparator.compareDocuments(primaryDocs, secondaryDocs);
         
         log.debug("Found {} documents only in primary, {} only in secondary, {} content differences",
             setDifference.getOnlyInPrimary().size(),
             setDifference.getOnlyInSecondary().size(),
-            contentDifferences.getTotalFieldDifferences());
+            contentDifferences.totalFieldDifferences());
         
         return DiffAnalysis.builder()
             .setDifference(setDifference)
@@ -104,7 +101,7 @@ public class DiffService {
     
     private String generateSummary(DiffResult.HitCounts hitCounts, 
                                  ResultSetComparator.SetDifference setDifference,
-                                 ContentComparator.ComparisonResult contentResult) {
+                                 ComparisonResult contentResult) {
         StringBuilder summary = new StringBuilder();
         
         if (hitCounts.getDifference() == 0) {
@@ -123,9 +120,9 @@ public class DiffService {
             summary.append(setDifference.getOnlyInSecondary().size()).append(" documents only in secondary. ");
         }
         
-        if (contentResult.getTotalFieldDifferences() > 0) {
-            summary.append("Found ").append(contentResult.getTotalFieldDifferences())
-                   .append(" field differences across ").append(contentResult.getDocumentsWithDifferences())
+        if (contentResult.totalFieldDifferences() > 0) {
+            summary.append("Found ").append(contentResult.totalFieldDifferences())
+                   .append(" field differences across ").append(contentResult.documentsWithDifferences())
                    .append(" documents. ");
         } else if (hitCounts.getDifference() == 0 && setDifference.getOnlyInPrimary().isEmpty() && setDifference.getOnlyInSecondary().isEmpty()) {
             summary.append("Data matches completely.");
@@ -138,6 +135,6 @@ public class DiffService {
     @lombok.Builder
     public static class DiffAnalysis {
         private ResultSetComparator.SetDifference setDifference;
-        private ContentComparator.ComparisonResult contentResult;
+        private ComparisonResult contentResult;
     }
 }

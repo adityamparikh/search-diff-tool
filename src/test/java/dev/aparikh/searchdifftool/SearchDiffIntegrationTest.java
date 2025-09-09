@@ -4,9 +4,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.aparikh.searchdifftool.api.SearchRequest;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.Disabled;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureWebMvc;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.http.MediaType;
@@ -23,19 +22,16 @@ import org.testcontainers.utility.DockerImageName;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@Disabled("Requires Docker containers - enable for full integration testing")
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@AutoConfigureWebMvc
+@AutoConfigureMockMvc
 @Testcontainers
 class SearchDiffIntegrationTest {
 
     @Container
-    static SolrContainer primarySolr = new SolrContainer(DockerImageName.parse("solr:9.7.0"))
-            .withCollection("emails_primary");
+    static SolrContainer primarySolr = new SolrContainer(DockerImageName.parse("solr:8.11"));
 
     @Container
-    static SolrContainer secondarySolr = new SolrContainer(DockerImageName.parse("solr:9.7.0"))
-            .withCollection("emails_secondary");
+    static SolrContainer secondarySolr = new SolrContainer(DockerImageName.parse("solr:8.11"));
 
     @Autowired
     private MockMvc mockMvc;
@@ -57,7 +53,24 @@ class SearchDiffIntegrationTest {
     @BeforeAll
     static void setUp() {
         // Containers are already started by @Testcontainers
-        // Add test data setup here if needed
+        // Create collections with schema-less configuration for testing
+        try {
+            primarySolr.execInContainer("solr", "create_collection", "-c", "emails_primary", "-s", "1", "-rf", "1");
+            secondarySolr.execInContainer("solr", "create_collection", "-c", "emails_secondary", "-s", "1", "-rf", "1");
+            
+            // Add sample documents to make search work
+            primarySolr.execInContainer("curl", "-X", "POST", 
+                "http://localhost:8983/solr/emails_primary/update?commit=true",
+                "-H", "Content-Type: application/json",
+                "-d", "[{\"id\":\"1\",\"email_subject\":\"test\"}]");
+                
+            secondarySolr.execInContainer("curl", "-X", "POST", 
+                "http://localhost:8983/solr/emails_secondary/update?commit=true", 
+                "-H", "Content-Type: application/json",
+                "-d", "[{\"id\":\"1\",\"subject_field\":\"test\"}]");
+        } catch (Exception e) {
+            System.out.println("Collection setup failed: " + e.getMessage());
+        }
     }
 
     @Test

@@ -1,4 +1,4 @@
-package dev.aparikh.searchdifftool.diff.model;
+package dev.aparikh.searchdifftool.diff;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import dev.aparikh.searchdifftool.diff.comparison.DifferenceType;

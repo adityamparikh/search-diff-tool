@@ -2,7 +2,7 @@ package dev.aparikh.searchdifftool;
 
 import dev.aparikh.searchdifftool.api.ApiResponse;
 import dev.aparikh.searchdifftool.api.SearchRequest;
-import dev.aparikh.searchdifftool.diff.model.DiffResult;
+import dev.aparikh.searchdifftool.diff.DiffResult;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;

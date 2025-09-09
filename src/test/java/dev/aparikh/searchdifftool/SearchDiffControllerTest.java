@@ -2,7 +2,7 @@ package dev.aparikh.searchdifftool;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.aparikh.searchdifftool.api.SearchRequest;
-import dev.aparikh.searchdifftool.diff.model.DiffResult;
+import dev.aparikh.searchdifftool.diff.DiffResult;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;

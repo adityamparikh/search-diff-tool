@@ -2,7 +2,7 @@ package dev.aparikh.searchdifftool;
 
 import dev.aparikh.searchdifftool.api.SearchRequest;
 import dev.aparikh.searchdifftool.diff.DiffService;
-import dev.aparikh.searchdifftool.diff.model.DiffResult;
+import dev.aparikh.searchdifftool.diff.DiffResult;
 import dev.aparikh.searchdifftool.normalization.NormalizedDocument;
 import dev.aparikh.searchdifftool.normalization.NormalizationService;
 import dev.aparikh.searchdifftool.search.SearchCriteria;

@@ -1,5 +1,6 @@
 package dev.aparikh.searchdifftool.normalization;
 
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
@@ -11,6 +12,7 @@ import java.util.Map;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 public class NormalizedDocument {
     private String id;
     private String subject;
