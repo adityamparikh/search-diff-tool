@@ -15,6 +15,32 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+/**
+ * Component responsible for performing detailed field-level content comparison between documents.
+ * 
+ * <p>This comparator analyzes documents that exist in both primary and secondary result sets,
+ * identifying differences at the individual field level. It uses reflection to dynamically
+ * compare all configured fields and provides detailed reporting of differences found.
+ * 
+ * <p>The comparison process includes:
+ * <ul>
+ * <li><strong>Field-by-Field Analysis:</strong> Compares each configured field using reflection</li>
+ * <li><strong>Null Value Handling:</strong> Properly handles missing fields in either dataset</li>
+ * <li><strong>Type Mismatch Detection:</strong> Identifies fields with different data types</li>
+ * <li><strong>Metadata Comparison:</strong> Deep comparison of nested metadata objects</li>
+ * <li><strong>Difference Classification:</strong> Categorizes differences by type for analysis</li>
+ * </ul>
+ * 
+ * <p>Results are aggregated into comprehensive metrics including total differences,
+ * affected document counts, and per-field difference statistics.
+ * 
+ * @author Claude Code
+ * @version 1.0
+ * @since 1.0
+ * @see DifferenceType
+ * @see ComparisonResult
+ * @see FieldMappingConfigurationProperties
+ */
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -22,6 +48,27 @@ public class ContentComparator {
     
     private final FieldMappingConfigurationProperties fieldMappingConfigurationProperties;
     
+    /**
+     * Performs comprehensive content comparison between two sets of normalized documents.
+     * 
+     * <p>This method analyzes documents with matching IDs from both sets, performing
+     * field-by-field comparison to identify content differences. The analysis includes:
+     * 
+     * <ul>
+     * <li>Standard field comparison (subject, body, from, etc.)</li>
+     * <li>Deep metadata comparison for nested objects</li>
+     * <li>Proper null value handling</li>
+     * <li>Type mismatch detection</li>
+     * </ul>
+     * 
+     * <p>Only documents that exist in both sets are compared for content differences.
+     * Documents that exist in only one set should be identified using {@link ResultSetComparator}.
+     * 
+     * @param primaryDocs normalized documents from primary system
+     * @param secondaryDocs normalized documents from secondary system
+     * @return comprehensive comparison result with detailed difference analysis
+     * @see DifferenceType for types of differences that can be detected
+     */
     public ComparisonResult compareDocuments(List<NormalizedDocument> primaryDocs,
                                            List<NormalizedDocument> secondaryDocs) {
         

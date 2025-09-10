@@ -14,8 +14,28 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 
 /**
- * Service focused purely on document comparison logic.
- * Does not handle searches - expects normalized documents as input.
+ * Core service for performing comprehensive document difference analysis.
+ * 
+ * <p>This service is responsible for coordinating various comparison operations between
+ * primary and secondary document sets. It focuses purely on comparison logic and does not
+ * handle search operations - it expects pre-normalized documents as input.
+ * 
+ * <p>The service performs three types of comparisons:
+ * <ul>
+ * <li><strong>Hit Count Comparison:</strong> Compares total number of search results</li>
+ * <li><strong>Result Set Comparison:</strong> Identifies documents present in only one set</li>
+ * <li><strong>Content Comparison:</strong> Analyzes field-level differences in common documents</li>
+ * </ul>
+ * 
+ * <p>All comparison operations are logged for monitoring and debugging purposes, and
+ * performance metrics are collected to track operation efficiency.
+ * 
+ * @author Claude Code
+ * @version 1.0
+ * @since 1.0
+ * @see ContentComparator
+ * @see ResultSetComparator  
+ * @see HitCountComparator
  */
 @Slf4j
 @Service
@@ -28,8 +48,21 @@ public class DiffService {
     
     
     /**
-     * Performs complete diff analysis with provided normalized documents.
-     * Accepts raw SearchResults for hit count comparison and normalized documents for content comparison.
+     * Performs complete comprehensive diff analysis between primary and secondary search results.
+     * 
+     * <p>This method coordinates all comparison operations and builds a complete diff result:
+     * <ol>
+     * <li>Compares hit counts using raw search results</li>
+     * <li>Analyzes result set differences using normalized documents</li>
+     * <li>Performs content comparison of common documents</li>
+     * <li>Builds performance metrics and summary</li>
+     * </ol>
+     * 
+     * @param primaryResult raw search result from primary system (used for hit count and timing)
+     * @param secondaryResult raw search result from secondary system (used for hit count and timing)
+     * @param primaryNormalizedDocs normalized documents from primary system
+     * @param secondaryNormalizedDocs normalized documents from secondary system
+     * @return comprehensive diff result containing all comparison analysis
      */
     public DiffResult performCompleteDiffWithNormalizedDocs(SearchResult primaryResult, 
                                                           SearchResult secondaryResult,
@@ -74,7 +107,17 @@ public class DiffService {
     }
     
     /**
-     * Compares two sets of normalized documents and returns the differences.
+     * Compares two sets of normalized documents for structural and content differences.
+     * 
+     * <p>This method performs two main comparison operations:
+     * <ul>
+     * <li><strong>Set Difference Analysis:</strong> Identifies documents present in only one set</li>
+     * <li><strong>Content Comparison:</strong> Analyzes field-level differences in documents present in both sets</li>
+     * </ul>
+     * 
+     * @param primaryDocs normalized documents from primary system
+     * @param secondaryDocs normalized documents from secondary system
+     * @return analysis containing both set differences and content comparison results
      */
     public DiffAnalysis compareDocs(List<NormalizedDocument> primaryDocs, 
                                    List<NormalizedDocument> secondaryDocs) {
@@ -99,6 +142,22 @@ public class DiffService {
             .build();
     }
     
+    /**
+     * Generates a human-readable summary of the diff analysis results.
+     * 
+     * <p>The summary includes:
+     * <ul>
+     * <li>Hit count comparison results</li>
+     * <li>Documents found only in primary or secondary</li>
+     * <li>Content difference statistics</li>
+     * <li>Overall match status</li>
+     * </ul>
+     * 
+     * @param hitCounts comparison of total hit counts
+     * @param setDifference documents found only in one set
+     * @param contentResult field-level content differences
+     * @return formatted summary string
+     */
     private String generateSummary(DiffResult.HitCounts hitCounts, 
                                  ResultSetComparator.SetDifference setDifference,
                                  ComparisonResult contentResult) {
@@ -131,10 +190,18 @@ public class DiffService {
         return summary.toString().trim();
     }
     
+    /**
+     * Data class containing the results of document comparison analysis.
+     * 
+     * <p>This class aggregates results from both set difference analysis
+     * and content comparison operations for internal processing.
+     */
     @lombok.Data
     @lombok.Builder
     public static class DiffAnalysis {
+        /** Documents found only in primary or secondary sets */
         private ResultSetComparator.SetDifference setDifference;
+        /** Field-level content differences in common documents */
         private ComparisonResult contentResult;
     }
 }

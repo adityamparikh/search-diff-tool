@@ -16,6 +16,24 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+/**
+ * Main orchestration service for performing search diff operations between primary and secondary Solr systems.
+ * 
+ * <p>This service coordinates the entire search diff workflow:
+ * <ol>
+ * <li>Executes parallel searches on both primary and secondary Solr instances</li>
+ * <li>Normalizes the retrieved documents to a common format</li>
+ * <li>Performs comprehensive diff analysis including hit count, result set, and content comparisons</li>
+ * <li>Returns detailed diff results with analysis metrics</li>
+ * </ol>
+ * 
+ * <p>The service handles error scenarios gracefully and provides detailed logging for monitoring
+ * and debugging purposes.
+ * 
+ * @author Claude Code
+ * @version 1.0
+ * @since 1.0
+ */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -25,6 +43,22 @@ public class SearchDiffService {
     private final NormalizationService normalizationService;
     private final DiffService diffService;
     
+    /**
+     * Performs a comprehensive search diff operation between primary and secondary Solr systems.
+     * 
+     * <p>This method orchestrates the complete diff workflow:
+     * <ul>
+     * <li>Maps the incoming request to internal search criteria</li>
+     * <li>Executes searches on both primary and secondary systems</li>
+     * <li>Normalizes all retrieved documents to a common format</li>
+     * <li>Performs detailed comparison analysis</li>
+     * </ul>
+     * 
+     * @param request the search request containing search criteria and options
+     * @return {@link DiffResult} containing comprehensive comparison results including:
+     *         hit counts, result set differences, content differences, and summary metrics
+     * @throws SearchDiffException if any error occurs during the search diff process
+     */
     public DiffResult performSearchDiff(SearchRequest request) {
         log.info("Processing search diff request: {}", request);
         
@@ -58,6 +92,13 @@ public class SearchDiffService {
         }
     }
     
+    /**
+     * Normalizes a list of Solr documents to the common NormalizedDocument format.
+     * 
+     * @param solrDocuments the list of Solr documents to normalize
+     * @param isPrimary true if documents are from primary system, false if from secondary
+     * @return list of normalized documents in common format
+     */
     private List<NormalizedDocument> normalizeDocuments(List<SolrDocument> solrDocuments, boolean isPrimary) {
         List<NormalizedDocument> normalizedDocuments = new ArrayList<>();
         
@@ -69,6 +110,18 @@ public class SearchDiffService {
         return normalizedDocuments;
     }
     
+    /**
+     * Maps an API search request to internal search criteria format.
+     * 
+     * <p>Applies default values for pagination parameters if not provided:
+     * <ul>
+     * <li>maxResults defaults to 1000</li>
+     * <li>start defaults to 0</li>
+     * </ul>
+     * 
+     * @param request the incoming search request from API
+     * @return mapped search criteria for internal processing
+     */
     private SearchCriteria mapToSearchCriteria(SearchRequest request) {
         return SearchCriteria.builder()
             .subject(request.getSubject())
@@ -85,7 +138,19 @@ public class SearchDiffService {
             .build();
     }
     
+    /**
+     * Exception thrown when search diff operations fail.
+     * 
+     * <p>This exception wraps underlying errors that occur during the search diff process,
+     * providing context about the failure while preserving the original cause.
+     */
     public static class SearchDiffException extends RuntimeException {
+        /**
+         * Constructs a SearchDiffException with a message and underlying cause.
+         * 
+         * @param message descriptive error message
+         * @param cause the underlying exception that caused this error
+         */
         public SearchDiffException(String message, Throwable cause) {
             super(message, cause);
         }

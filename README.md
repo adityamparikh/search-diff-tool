@@ -1,6 +1,6 @@
 # Search Diff Tool
 
-A Spring Boot application for comparing search results between two Apache Solr instances with different schemas. This tool normalizes results from both systems and provides detailed difference analysis including hit counts, missing documents, and content variations.
+A comprehensive Spring Boot application for comparing search results between primary and secondary Apache Solr systems. This tool enables detailed analysis of differences in search behavior, hit counts, result sets, and document content across different Solr implementations.
 
 ## 🚀 Features
 
@@ -492,12 +492,39 @@ public class CustomComparator {
 }
 ```
 
+## 📚 Documentation
+
+### Javadocs
+The codebase includes comprehensive Javadocs for all public APIs:
+
+```bash
+# Generate Javadoc documentation
+./gradlew javadoc
+
+# View generated docs
+open build/docs/javadoc/index.html
+```
+
+Key documented classes:
+- **SearchDiffService**: Main orchestration service with workflow documentation
+- **DiffService**: Core comparison engine with algorithm details
+- **ContentComparator**: Field-level comparison with reflection-based analysis
+- **FieldMappingConfigurationProperties**: Configuration mapping with examples
+- **All Comparison Components**: Detailed API documentation for each comparator
+
+### Code Quality
+- **Comprehensive Test Coverage**: Full unit and integration test suite
+- **Clean Architecture**: Package-by-feature with clear separation of concerns
+- **SOLID Principles**: Dependency injection and interface segregation
+- **Error Handling**: Robust exception handling with detailed error contexts
+
 ## 📈 Performance Considerations
 
 - **Connection Pooling**: Adjust Solr connection pool settings in application.properties
 - **Result Limits**: Use `maxResults` parameter to control comparison scope (1-10000)
 - **Pagination**: Use `start` parameter for large result sets
 - **Memory Usage**: Large result sets are processed in-memory during comparison
+- **Reflection Performance**: Dynamic field mapping optimized with caching
 
 ## 🚦 Monitoring
 

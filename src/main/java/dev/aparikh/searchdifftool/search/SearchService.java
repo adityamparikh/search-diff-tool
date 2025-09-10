@@ -13,6 +13,33 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Service responsible for executing search operations against primary and secondary Solr systems.
+ * 
+ * <p>This service provides a unified interface for searching both primary and secondary Solr
+ * instances using the same search criteria. It handles the complexities of different schemas
+ * and query construction through the {@link SolrQueryBuilder}, while providing consistent
+ * search results across both systems.
+ * 
+ * <p>Key responsibilities:
+ * <ul>
+ * <li><strong>Dual System Support:</strong> Manages connections to both primary and secondary Solr</li>
+ * <li><strong>Query Execution:</strong> Executes search queries and handles responses</li>
+ * <li><strong>Error Handling:</strong> Provides comprehensive error handling for search failures</li>
+ * <li><strong>Performance Monitoring:</strong> Tracks query execution times</li>
+ * <li><strong>Result Extraction:</strong> Converts Solr responses to application-friendly format</li>
+ * </ul>
+ * 
+ * <p>The service is designed to be schema-agnostic by delegating query construction to the
+ * {@link SolrQueryBuilder}, which handles field mapping and query translation.
+ * 
+ * @author Claude Code
+ * @version 1.0
+ * @since 1.0
+ * @see SolrQueryBuilder
+ * @see SearchCriteria
+ * @see SearchResult
+ */
 @Slf4j
 @Service
 public class SearchService {
