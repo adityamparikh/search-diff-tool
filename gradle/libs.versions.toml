@@ -1,0 +1,7 @@
+[versions]
+solr-solrj = "9.7.0"
+testcontainers-solr = "1.20.3"
+
+[libraries]
+solr-solrj = { module = "org.apache.solr:solr-solrj", version.ref = "solr-solrj" }
+testcontainers-solr = { module = "org.testcontainers:solr", version.ref = "testcontainers-solr" }

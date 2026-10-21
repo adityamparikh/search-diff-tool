@@ -26,7 +26,7 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-validation")
     
     // Apache Solr
-    implementation("org.apache.solr:solr-solrj:9.7.0")
+    implementation(libs.solr.solrj)
     
     // JSON processing
     implementation("com.fasterxml.jackson.core:jackson-core")
@@ -39,7 +39,7 @@ dependencies {
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.springframework.boot:spring-boot-testcontainers")
     testImplementation("org.testcontainers:junit-jupiter")
-    testImplementation("org.testcontainers:solr:1.20.3")
+    testImplementation(libs.testcontainers.solr)
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 
