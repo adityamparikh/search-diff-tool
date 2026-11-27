@@ -60,7 +60,7 @@ public class NormalizationService {
     }
     
     private Object getValueByType(Map<String, Object> doc, String fieldName, String dataType) {
-        return switch (dataType.toLowerCase()) {
+        return switch (dataType.toLowerCase(Locale.ROOT)) {
             case STRING -> getStringValue(doc, fieldName);
             case DATE -> getDateValue(doc, fieldName);
             case LIST -> getListValue(doc, fieldName);
@@ -127,7 +127,7 @@ public class NormalizationService {
     }
     
     private Class<?> getFieldType(String dataType) {
-        return switch (dataType.toLowerCase()) {
+        return switch (dataType.toLowerCase(Locale.ROOT)) {
             case STRING -> String.class;
             case DATE -> LocalDateTime.class;
             case LIST -> List.class;
