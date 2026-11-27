@@ -8,6 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.BindException;
 import org.springframework.validation.FieldError;
+import org.springframework.validation.ObjectError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 
 import java.util.Map;
@@ -55,6 +56,24 @@ class GlobalExceptionHandlerTest {
         assertThat(response.getBody().isSuccess()).isFalse();
         assertThat(response.getBody().getError()).isEqualTo("VALIDATION_ERROR");
         assertThat(response.getBody().getMessage()).isEqualTo("Invalid request parameters");
+        assertThat(response.getBody().getData()).containsExactly(Map.entry("testField", "Test validation error"));
+    }
+
+    @Test
+    void handleValidationExceptions_WithObjectLevelError_DoesNotFail() {
+        // Given
+        BeanPropertyBindingResult bindingResult = new BeanPropertyBindingResult(new Object(), "testObject");
+        bindingResult.addError(new ObjectError("testObject", "Class-level validation error"));
+        bindingResult.addError(new FieldError("testObject", "testField", "Test validation error"));
+        BindException exception = new BindException(bindingResult);
+
+        // When
+        ResponseEntity<ApiResponse<Map<String, String>>> response = exceptionHandler.handleValidationExceptions(exception);
+
+        // Then
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody().getData()).containsExactly(Map.entry("testField", "Test validation error"));
     }
 
     @Test
