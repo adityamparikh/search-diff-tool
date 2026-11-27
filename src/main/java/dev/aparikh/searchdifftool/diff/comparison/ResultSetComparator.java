@@ -5,7 +5,7 @@ import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -19,11 +19,11 @@ public class ResultSetComparator {
         
         Set<String> primaryIds = primaryDocs != null ? primaryDocs.stream()
             .map(NormalizedDocument::getId)
-            .collect(Collectors.toSet()) : Set.of();
+            .collect(Collectors.toCollection(LinkedHashSet::new)) : Set.of();
             
         Set<String> secondaryIds = secondaryDocs != null ? secondaryDocs.stream()
             .map(NormalizedDocument::getId)
-            .collect(Collectors.toSet()) : Set.of();
+            .collect(Collectors.toCollection(LinkedHashSet::new)) : Set.of();
         
         List<String> onlyInPrimary = primaryIds.stream()
             .filter(id -> !secondaryIds.contains(id))
