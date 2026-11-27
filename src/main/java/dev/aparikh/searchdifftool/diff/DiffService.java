@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
@@ -41,7 +42,7 @@ public class DiffService {
         log.debug("Performing complete diff analysis between {} primary and {} secondary hits", 
             primaryResult.totalHits(), secondaryResult.totalHits());
         
-        long startTime = System.currentTimeMillis();
+        long startNanos = System.nanoTime();
         DiffResult.DiffResultBuilder resultBuilder = DiffResult.builder();
         
         // Compare hit counts using raw search results
@@ -56,7 +57,7 @@ public class DiffService {
         resultBuilder.contentDifferences(analysis.getContentResult().differences());
         
         // Build metrics
-        long comparisonTime = System.currentTimeMillis() - startTime;
+        long comparisonTime = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startNanos);
         DiffResult.ComparisonMetrics metrics = DiffResult.ComparisonMetrics.builder()
             .totalDocumentsCompared(countDocumentsInBoth(primaryNormalizedDocs, secondaryNormalizedDocs))
             .documentsWithDifferences(analysis.getContentResult().documentsWithDifferences())
