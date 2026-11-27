@@ -10,9 +10,11 @@ import org.springframework.stereotype.Component;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -25,12 +27,9 @@ public class ContentComparator {
     public ComparisonResult compareDocuments(List<NormalizedDocument> primaryDocs,
                                            List<NormalizedDocument> secondaryDocs) {
         
-        // Create maps for quick lookup
-        Map<String, NormalizedDocument> primaryMap = primaryDocs.stream()
-            .collect(Collectors.toMap(NormalizedDocument::getId, doc -> doc));
-            
-        Map<String, NormalizedDocument> secondaryMap = secondaryDocs.stream()
-            .collect(Collectors.toMap(NormalizedDocument::getId, doc -> doc));
+        // Create maps for quick lookup, preserving result order
+        Map<String, NormalizedDocument> primaryMap = indexById(primaryDocs, "primary");
+        Map<String, NormalizedDocument> secondaryMap = indexById(secondaryDocs, "secondary");
         
         List<DiffResult.ContentDifference> differences = new ArrayList<>();
         Map<String, Integer> differencesByField = new HashMap<>();
@@ -66,6 +65,19 @@ public class ContentComparator {
             differences.size(),
             differencesByField
         );
+    }
+    
+    /**
+     * Indexes documents by ID. Solr results can contain several documents with the same mapped ID
+     * (or none at all, giving a {@code null} ID); the first occurrence wins instead of failing the whole diff.
+     */
+    private static Map<String, NormalizedDocument> indexById(List<NormalizedDocument> docs, String source) {
+        return docs.stream()
+            .collect(Collectors.toMap(NormalizedDocument::getId, Function.identity(), (first, duplicate) -> {
+                log.warn("Duplicate document id '{}' in {} results; comparing only the first occurrence",
+                    first.getId(), source);
+                return first;
+            }, LinkedHashMap::new));
     }
     
     private List<DiffResult.ContentDifference> compareDocument(NormalizedDocument primary, NormalizedDocument secondary) {

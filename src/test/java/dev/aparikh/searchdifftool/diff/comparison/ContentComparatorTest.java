@@ -172,6 +172,43 @@ class ContentComparatorTest {
         assertThat(result.differencesByField()).isEmpty();
     }
 
+    @Test
+    void compareDocuments_WithDuplicateIds_ComparesFirstOccurrenceInsteadOfFailing() {
+        // Given
+        List<NormalizedDocument> primaryDocs = List.of(
+            createDocument("1", "Subject", "Content", "Author"),
+            createDocument("1", "Duplicate", "Duplicate", "Duplicate")
+        );
+        List<NormalizedDocument> secondaryDocs = List.of(
+            createDocument("1", "Subject", "Content", "Author")
+        );
+
+        // When
+        ComparisonResult result = contentComparator.compareDocuments(primaryDocs, secondaryDocs);
+
+        // Then
+        assertThat(result.differences()).isEmpty();
+    }
+
+    @Test
+    void compareDocuments_WithSeveralDocumentsMissingIds_DoesNotFail() {
+        // Given
+        List<NormalizedDocument> primaryDocs = List.of(
+            createDocument(null, "Subject", "Content", "Author"),
+            createDocument(null, "Other", "Other", "Other")
+        );
+        List<NormalizedDocument> secondaryDocs = List.of(
+            createDocument(null, "Subject", "Content", "Author"),
+            createDocument(null, "Other", "Other", "Other")
+        );
+
+        // When
+        ComparisonResult result = contentComparator.compareDocuments(primaryDocs, secondaryDocs);
+
+        // Then
+        assertThat(result.differences()).isEmpty();
+    }
+
     private NormalizedDocument createDocument(String id, String subject, String body, String from) {
         return createDocumentWithMetadata(id, subject, body, from, Collections.emptyMap());
     }
