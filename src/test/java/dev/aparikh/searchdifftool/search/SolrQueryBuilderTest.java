@@ -244,4 +244,20 @@ class SolrQueryBuilderTest {
         assertThat(query).contains("date_field:");
         assertThat(query).contains("date_to_field:");
     }
+
+    @Test
+    void buildQueryForPrimary_withNullFilters_shouldNotFail() {
+        // Given
+        SearchCriteria criteria = SearchCriteria.builder()
+                .subject("test")
+                .filters(null)
+                .build();
+        when(fieldMappingConfigurationProperties.getPrimaryToCommon()).thenReturn(Map.of("email_subject", "subject"));
+
+        // When
+        SolrQuery result = solrQueryBuilder.buildQueryForPrimary(criteria);
+
+        // Then
+        assertThat(result.getQuery()).isEqualTo("email_subject:test");
+    }
 }

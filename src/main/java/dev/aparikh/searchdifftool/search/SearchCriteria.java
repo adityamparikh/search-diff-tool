@@ -47,8 +47,10 @@ public class SearchCriteria {
         if (dateTo != null) queryMap.put("dateTo", dateTo);
         if (attachmentName != null) queryMap.put("attachments", attachmentName);
         
-        // Add any additional filters
-        queryMap.putAll(filters);
+        // Add any additional filters; the request may carry an explicit null
+        if (filters != null) {
+            queryMap.putAll(filters);
+        }
         
         return queryMap;
     }
