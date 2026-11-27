@@ -275,6 +275,32 @@ class DiffServiceTest {
         );
     }
 
+    @Test
+    void performCompleteDiff_CountsOnlyDocumentsPresentInBothResultSetsAsCompared() {
+        // Given
+        SearchResult primaryResult = new SearchResult(Collections.emptyList(), 3L, "primary", 100L);
+        SearchResult secondaryResult = new SearchResult(Collections.emptyList(), 3L, "secondary", 100L);
+        List<NormalizedDocument> primaryDocs = List.of(createDocument("1"), createDocument("2"), createDocument("3"));
+        List<NormalizedDocument> secondaryDocs = List.of(createDocument("3"), createDocument("4"), createDocument("5"));
+
+        when(hitCountComparator.compare(primaryResult, secondaryResult)).thenReturn(new DiffResult.HitCounts(3, 3, 0));
+        when(resultSetComparator.findDifferences(primaryDocs, secondaryDocs))
+            .thenReturn(ResultSetComparator.SetDifference.builder()
+                .onlyInPrimary(List.of("1", "2"))
+                .onlyInSecondary(List.of("4", "5"))
+                .build());
+        when(contentComparator.compareDocuments(primaryDocs, secondaryDocs))
+            .thenReturn(new ComparisonResult(Collections.emptyList(), 0, 0, new HashMap<>()));
+
+        // When
+        DiffResult result = diffService.performCompleteDiffWithNormalizedDocs(
+            primaryResult, secondaryResult, primaryDocs, secondaryDocs
+        );
+
+        // Then
+        assertThat(result.getMetrics().getTotalDocumentsCompared()).isEqualTo(1);
+    }
+
     private NormalizedDocument createDocument(String id) {
         return NormalizedDocument.builder()
             .id(id)

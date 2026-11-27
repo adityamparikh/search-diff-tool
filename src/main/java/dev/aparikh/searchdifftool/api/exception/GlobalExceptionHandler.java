@@ -28,22 +28,17 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiResponse<Map<String, String>>> handleValidationExceptions(Exception e) {
         Map<String, String> errors = new HashMap<>();
         
-        if (e instanceof MethodArgumentNotValidException) {
-            ((MethodArgumentNotValidException) e).getBindingResult().getAllErrors().forEach(error -> {
-                String fieldName = ((FieldError) error).getField();
-                String errorMessage = error.getDefaultMessage();
-                errors.put(fieldName, errorMessage);
-            });
-        } else if (e instanceof BindException) {
-            ((BindException) e).getBindingResult().getAllErrors().forEach(error -> {
-                String fieldName = ((FieldError) error).getField();
-                String errorMessage = error.getDefaultMessage();
-                errors.put(fieldName, errorMessage);
-            });
+        // MethodArgumentNotValidException is a BindException. Only field errors carry a field name;
+        // object-level errors (e.g. class-level constraints) must not be cast to FieldError.
+        if (e instanceof BindException bindException) {
+            for (FieldError error : bindException.getBindingResult().getFieldErrors()) {
+                errors.put(error.getField(), error.getDefaultMessage());
+            }
         }
         
-        return ResponseEntity.badRequest()
-            .body(ApiResponse.error("VALIDATION_ERROR", "Invalid request parameters"));
+        ApiResponse<Map<String, String>> body = ApiResponse.error("VALIDATION_ERROR", "Invalid request parameters");
+        body.setData(errors);
+        return ResponseEntity.badRequest().body(body);
     }
     
     @ExceptionHandler(Exception.class)

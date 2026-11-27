@@ -12,6 +12,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 /**
  * Service focused purely on document comparison logic.
@@ -39,7 +42,7 @@ public class DiffService {
         log.debug("Performing complete diff analysis between {} primary and {} secondary hits", 
             primaryResult.totalHits(), secondaryResult.totalHits());
         
-        long startTime = System.currentTimeMillis();
+        long startNanos = System.nanoTime();
         DiffResult.DiffResultBuilder resultBuilder = DiffResult.builder();
         
         // Compare hit counts using raw search results
@@ -54,9 +57,9 @@ public class DiffService {
         resultBuilder.contentDifferences(analysis.getContentResult().differences());
         
         // Build metrics
-        long comparisonTime = System.currentTimeMillis() - startTime;
+        long comparisonTime = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startNanos);
         DiffResult.ComparisonMetrics metrics = DiffResult.ComparisonMetrics.builder()
-            .totalDocumentsCompared(Math.min(primaryNormalizedDocs.size(), secondaryNormalizedDocs.size()))
+            .totalDocumentsCompared(countDocumentsInBoth(primaryNormalizedDocs, secondaryNormalizedDocs))
             .documentsWithDifferences(analysis.getContentResult().documentsWithDifferences())
             .totalFieldDifferences(analysis.getContentResult().totalFieldDifferences())
             .queryTimePrimary(primaryResult.queryTime())
@@ -97,6 +100,21 @@ public class DiffService {
             .setDifference(setDifference)
             .contentResult(contentDifferences)
             .build();
+    }
+    
+    /**
+     * Number of distinct document IDs present in both result sets, i.e. the documents whose content is compared.
+     */
+    private static long countDocumentsInBoth(List<NormalizedDocument> primaryDocs,
+                                             List<NormalizedDocument> secondaryDocs) {
+        Set<String> secondaryIds = secondaryDocs.stream()
+            .map(NormalizedDocument::getId)
+            .collect(Collectors.toSet());
+        return primaryDocs.stream()
+            .map(NormalizedDocument::getId)
+            .distinct()
+            .filter(secondaryIds::contains)
+            .count();
     }
     
     private String generateSummary(DiffResult.HitCounts hitCounts, 

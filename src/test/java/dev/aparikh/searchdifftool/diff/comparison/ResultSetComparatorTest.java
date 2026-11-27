@@ -138,6 +138,24 @@ class ResultSetComparatorTest {
         assertThat(resultWithNullSecondary.getOnlyInSecondary()).isEmpty();
     }
 
+    @Test
+    void findDifferences_ReportsIdsInResultOrder() {
+        // Given: ranking order that differs from hash order
+        List<NormalizedDocument> primaryDocs = List.of(
+            createDocument("z", "Doc z"),
+            createDocument("m", "Doc m"),
+            createDocument("b", "Doc b"),
+            createDocument("a", "Doc a")
+        );
+        List<NormalizedDocument> secondaryDocs = List.of(createDocument("x", "Doc x"));
+
+        // When
+        ResultSetComparator.SetDifference result = resultSetComparator.findDifferences(primaryDocs, secondaryDocs);
+
+        // Then
+        assertThat(result.getOnlyInPrimary()).containsExactly("z", "m", "b", "a");
+    }
+
     private NormalizedDocument createDocument(String id, String subject) {
         return NormalizedDocument.builder()
             .id(id)
